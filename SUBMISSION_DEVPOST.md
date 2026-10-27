@@ -2,7 +2,7 @@
 
 > **Hackathon** : Nebius x NVIDIA Global AI Hackathon  
 > **Track** : *Coding and Agentic Engineering*  
-> **Repository** : `projects/nebius-nvidia-agent/`  
+> **Repository** : `https://github.com/Robe092/nebius-codesentinel`  
 > **Demo URL** : `http://localhost:3005` (Ready for production cloud deployment)
 
 ---
