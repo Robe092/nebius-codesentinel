@@ -10,7 +10,10 @@
     "lint": "next lint",
     "test": "node --import tsx --test src/tests/**/*.test.ts",
     "test:client": "node --import tsx --test src/tests/nebius-client.test.ts",
+    "verify:live": "node --import tsx scripts/verify-nebius-live.ts",
     "test:e2e": "node --import tsx scripts/e2e-browser-test.ts",
+    "test:ui": "node --import tsx scripts/interface-regression-test.ts",
+    "test:simple": "node --import tsx scripts/interface-simplification-test.ts",
     "cli": "node --import tsx bin/cli.ts"
   },
   "bin": {

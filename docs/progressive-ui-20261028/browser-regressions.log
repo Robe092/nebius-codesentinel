@@ -1,0 +1,10 @@
+PASS editing invalidates the previous audit
+PASS HTTP failures offer visible recovery
+PASS failed sessions retain their actual score and provenance
+PASS mobile keeps source scrolling inside its pane
+PASS changing result tabs starts at the new summary
+PASS an unavailable health check stays unknown
+PASS incomplete API responses show a recoverable error
+PASS stopping the demo prevents late transitions and unlocks editing
+PASS partial repair findings navigate the source actually shown
+PASS smallest supported header keeps both controls reachable

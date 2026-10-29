@@ -14,6 +14,13 @@ export async function POST(req: Request) {
       );
     }
 
+    if (Buffer.byteLength(code, "utf8") > 8192) {
+      return NextResponse.json(
+        { success: false, error: "Input code exceeds maximum allowed size of 8192 UTF-8 bytes" },
+        { status: 400 }
+      );
+    }
+
     const session = await selfHealingOrchestrator.executeHealingLoop(code, filename);
     return NextResponse.json({
       success: true,

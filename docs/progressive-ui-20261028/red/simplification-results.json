@@ -1,0 +1,25 @@
+{
+  "baseURL": "http://127.0.0.1:3005",
+  "results": [
+    {
+      "name": "one clear action above the fold at 1280x720",
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Run audit'\n- 'Analyze code'\n"
+    },
+    {
+      "name": "one clear action above the fold at 390x844",
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Run audit'\n- 'Analyze code'\n"
+    },
+    {
+      "name": "one clear action above the fold at 320x568",
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'Run audit'\n- 'Analyze code'\n"
+    },
+    {
+      "name": "findings, repair and evidence appear progressively and reset with source edits",
+      "passed": false,
+      "error": "AssertionError [ERR_ASSERTION]: Comparison is available only after a proposal\n+ actual - expected\n\n+ CdpElementHandle {\n+   Symbol(_isElementHandle): true,\n+   handle: CdpJSHandle {},\n+   isolatedHandle: undefined\n+ }\n- null\n"
+    }
+  ]
+}

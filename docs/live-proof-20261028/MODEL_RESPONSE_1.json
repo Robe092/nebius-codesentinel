@@ -1,0 +1,25 @@
+{
+  "id": "chatcmpl-aa293e018d7955bb",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "usage": {
+    "completion_tokens": 736,
+    "prompt_tokens": 143,
+    "total_tokens": 879,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 598,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0,
+      "created_cache_tokens": 0,
+      "multimodal_tokens": null
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 143
+  },
+  "finishReason": "stop",
+  "content": "{\"repairedCode\": \"// Payment webhook invariant test fixture\\nconst STRIPE_SECRET = process.env.API_CREDENTIAL;\\nexport async function handlePayment(event: any) {\\n  return { status: \\\"processed\\\", email: event.customer?.email };\\n}\", \"explanation\": \"Replaced the hardcoded demo Stripe secret with a reference to the environment variable API_CREDENTIAL to avoid committing credentials and enable runtime configuration.\", \"diff\": \"- const STRIPE_SECRET = \\\"DEMO_ONLY_NOT_A_REAL_CREDENTIAL\\\";\\n+ const STRIPE_SECRET = process.env.API_CREDENTIAL;\"}"
+}

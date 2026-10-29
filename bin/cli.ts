@@ -118,6 +118,12 @@ async function main() {
         console.log("ℹ️ Dry-run mode. Pass '--apply' to overwrite the file on disk.");
       }
       process.exit(0);
+    } else if (session.status === "PARTIAL") {
+      console.log(`\n⚠️ Partial repair: score ${session.finalReport?.score || 0} / 100 with ${session.finalReport?.issues.length || 0} outstanding issue(s). Manual review required.`);
+      if (applyFlag) {
+        console.log("🛑 '--apply' withheld: files are not overwritten for incomplete or partial repairs.");
+      }
+      process.exit(1);
     } else {
       console.log(`\n⚠️ Healing failed or circuit breaker triggered (${session.status}).`);
       process.exit(1);
@@ -125,16 +131,17 @@ async function main() {
   }
 
   if (command === "benchmark") {
-    console.log("\n📊 Nebius Token Factory + NVIDIA Nemotron vs Baseline Benchmark\n");
-    console.log("┌────────────────────────────────────┬─────────────────────┬───────────────────┬────────────────────┐");
-    console.log("│ Dimension                          │ Nebius + Nemotron   │ Cloud Baseline    │ Differential Delta │");
-    console.log("├────────────────────────────────────┼─────────────────────┼───────────────────┼────────────────────┤");
-    console.log("│ Latency (Full Patch Gen)           │ 840 ms (GPU H100)   │ 3,450 ms          │ 4.1x Faster        │");
-    console.log("│ Zero-Hallucination & Syntax Pass   │ 100.0%              │ 58.3%             │ +41.7% Compliance  │");
-    console.log("│ First-Pass Patch Success           │ 96.4%               │ 61.2%             │ +35.2% First-Pass  │");
-    console.log("│ Inference Cost (per 1M tokens)     │ $1.80               │ $15.00            │ 8.3x Cheaper       │");
-    console.log("│ Invariant Protection & Governance  │ 100% Shield         │ 0% (Unchecked)    │ Zero Regression    │");
-    console.log("└────────────────────────────────────┴─────────────────────┴───────────────────┴────────────────────┘\n");
+    console.log("\n📊 Nebius Token Factory + NVIDIA Nemotron Architectural Comparison\n");
+    console.log("ℹ️ Note: Numerical latency, speedup multipliers, and cost deltas are unmeasured and not certified without multi-run live telemetry.\n");
+    console.log("┌────────────────────────────────────┬──────────────────────────────────────┬──────────────────────────────────────┐");
+    console.log("│ Dimension                          │ Nebius + NVIDIA Nemotron             │ Generic Cloud Baseline               │");
+    console.log("├────────────────────────────────────┼──────────────────────────────────────┼──────────────────────────────────────┤");
+    console.log("│ Inference Platform                 │ Dedicated Token Factory GPU cluster  │ Shared multi-tenant endpoint         │");
+    console.log("│ Verification Pipeline              │ Static rules + TypeScript AST checks │ None (raw unverified generation)     │");
+    console.log("│ Source Preservation                │ Structural AST guard (exports kept)  │ Unchecked full rewrites              │");
+    console.log("│ Governance & Safety                │ Enforced HITL conditional gates      │ Direct unguarded dispatches          │");
+    console.log("└────────────────────────────────────┴──────────────────────────────────────┴──────────────────────────────────────┘\n");
+    console.log("Verifiable guarantees are provided by deterministic static rules and in-memory TypeScript compiler checks.\n");
     process.exit(0);
   }
 

@@ -57,17 +57,29 @@ export const AuditReportSchema = z.object({
 export type AuditReport = z.infer<typeof AuditReportSchema>;
 
 // --- Patch Proposal Schema ---
+export const TokenUsageSchema = z.object({
+  promptTokens: z.number(),
+  completionTokens: z.number(),
+  totalTokens: z.number(),
+});
+
+export type TokenUsage = z.infer<typeof TokenUsageSchema>;
+
 export const PatchProposalSchema = z.object({
   id: z.string(),
   timestamp: z.string(),
   modelUsed: z.string(),
+  requestedModel: z.string().optional(),
+  providerModelVerified: z.boolean().optional(),
   reasoningSteps: z.array(z.string()),
   explanation: z.string(),
   diff: z.string(),
   repairedCode: z.string(),
   fixedIssueIds: z.array(z.string()),
-  confidenceScore: z.number().min(0).max(1),
+  confidenceScore: z.number().min(0).max(1).optional().nullable(),
   sourceMode: z.enum(["LIVE_NEBIUS", "MOCK_SIMULATED"]),
+  providerResponseId: z.string().optional(),
+  tokenUsage: TokenUsageSchema.optional(),
 });
 
 export type PatchProposal = z.infer<typeof PatchProposalSchema>;
@@ -94,7 +106,7 @@ export const SelfHealingSessionSchema = z.object({
   fileName: z.string(),
   originalCode: z.string(),
   currentCode: z.string(),
-  status: z.enum(["IDLE", "IN_PROGRESS", "SUCCESS", "FAILED", "CIRCUIT_BREAKER_TRIGGERED"]),
+  status: z.enum(["IDLE", "IN_PROGRESS", "SUCCESS", "PARTIAL", "FAILED", "CIRCUIT_BREAKER_TRIGGERED"]),
   currentIteration: z.number(),
   maxIterations: z.number().default(3),
   steps: z.array(SelfHealingStepSchema),

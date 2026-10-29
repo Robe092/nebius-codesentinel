@@ -1,0 +1,60 @@
+✖ The shipped clean workflow passes the same verifier used for repair proposals (364.241166ms)
+✖ Live repair requests describe the fixture helpers required to typecheck the complete payment example (3.074ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1059.073083
+
+✖ failing tests:
+
+test at src/tests/fixture-environment.test.ts:1:437
+✖ The shipped clean workflow passes the same verifier used for repair proposals (364.241166ms)
+  AssertionError [ERR_ASSERTION]: TypeScript semantic check failed: TS2792: Cannot find module './guardrails'. Did you mean to set the 'moduleResolution' option to 'nodenext', or to add aliases to the 'paths' option?
+  
+  false !== true
+  
+      at TestContext.<anonymous> (/Users/narjhandamoiseau/Documents/n8n-integration/n8n-integration/projects/nebius-nvidia-agent/src/tests/fixture-environment.test.ts:12:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at src/tests/fixture-environment.test.ts:1:865
+✖ Live repair requests describe the fixture helpers required to typecheck the complete payment example (3.074ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /verifyHumanApproval\(event\??:\s*any\):\s*Promise<boolean>/. Input:
+  
+  'You are NVIDIA Nemotron-3 Super CodeSentinel, an elite autonomous code healing agent operating on the Nebius AI Cloud.\n' +
+    'Your mission:\n' +
+    '1. Examine the target code and the identified architectural, security, and invariant issues.\n' +
+    '2. Formulate step-by-step reasoning explaining why each issue occurred and how to resolve it safely.\n' +
+    '3. Preserve all non-impacted business logic, comments, and contracts (Anti-Regression).\n' +
+    '4. Provide the exact unified diff and the complete, pristine repaired code.\n' +
+    '5. Format your output strictly as a JSON object with this exact structure:\n' +
+    '{\n' +
+    '  "reasoningSteps": ["Step 1...", "Step 2..."],\n' +
+    '  "explanation": "Executive summary of the fix",\n' +
+    '  "diff": "--- a/file\\n+++ b/file\\n@@ ... @@",\n' +
+    '  "repairedCode": "complete updated code",\n' +
+    '  "fixedIssueIds": ["issue_id_1", "issue_id_2"],\n' +
+    '  "confidenceScore": 0.98\n' +
+    '}'
+  
+      at TestContext.<anonymous> (/Users/narjhandamoiseau/Documents/n8n-integration/n8n-integration/projects/nebius-nvidia-agent/src/tests/fixture-environment.test.ts:41:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'You are NVIDIA Nemotron-3 Super CodeSentinel, an elite autonomous code healing agent operating on the Nebius AI Cloud.\nYour mission:\n1. Examine the target code and the identified architectural, security, and invariant issues.\n2. Formulate step-by-step reasoning explaining why each issue occurred and how to resolve it safely.\n3. Preserve all non-impacted business logic, comments, and contracts (Anti-Regression).\n4. Provide the exact unified diff and the complete, pristine repaired code.\n5. Format your output strictly as a JSON object with this exact structure:\n{\n  "reasoningSteps": ["Step 1...", "Step 2..."],\n  "explanation": "Executive summary of the fix",\n  "diff": "--- a/file\\n+++ b/file\\n@@ ... @@",\n  "repairedCode": "complete updated code",\n  "fixedIssueIds": ["issue_id_1", "issue_id_2"],\n  "confidenceScore": 0.98\n}',
+    expected: /verifyHumanApproval\(event\??:\s*any\):\s*Promise<boolean>/,
+    operator: 'match',
+    diff: 'simple'
+  }

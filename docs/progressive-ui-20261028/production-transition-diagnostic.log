@@ -1,0 +1,4 @@
+PASS one clear action above the fold at 1280x720
+PASS one clear action above the fold at 390x844
+PASS one clear action above the fold at 320x568
+FAIL findings, repair and evidence appear progressively and reset with source edits: AssertionError [ERR_ASSERTION]: Analyze again must look secondary to repair: {"analyze":"rgb(180, 230, 107)","repair":"rgb(180, 230, 107)","analyzeClass":"button button-secondary","repairClass":"button button-primary","matchingRules":[".button-secondary { border-color: rgb(57, 70, 84); background: rgb(26, 34, 45); color: rgb(230, 236, 243); }",".button-secondary:hover:not(:disabled) { background: rgb(37, 49, 62); border-color: rgb(82, 99, 115); }",".simple-workspace #btn-static-audit { min-height: 44px; padding: 10px 19px; }"]}

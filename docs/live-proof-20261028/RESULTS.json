@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-28",
+  "verdict": "REAL_CONTROLLED_NVIDIA_NEBIUS_REPAIR_PASS",
+  "model": "nvidia/nemotron-3-super-120b-a12b",
+  "responseId": "chatcmpl-aa293e018d7955bb",
+  "inferenceRequests": 1,
+  "fallbackRequests": 0,
+  "automaticRetries": 0,
+  "promptTokens": 143,
+  "completionTokens": 736,
+  "totalTokens": 879,
+  "durationMs": 6683,
+  "estimatedInferenceCostUsdBeforeTax": 0.0007053,
+  "authorizedBudgetUsd": 0.05,
+  "secondAuthorizedRequestUnused": true,
+  "runtimeExecution": "NOT_VERIFIED",
+  "businessContracts": "NOT_VERIFIED",
+  "uiMode": "MOCK_SIMULATED",
+  "privateKeyInEvidence": false,
+  "offlineTests": {
+    "passed": 65,
+    "total": 65
+  },
+  "projectTypecheck": "PASS",
+  "productionBuild": "PASS",
+  "videoRecorded": false,
+  "videoProof": "VIDEO_PROOF_EN.md",
+  "recordingGuide": "../../GUIDE_VIDEO_FR.md",
+  "rawEvidence": [
+    "LIVE_NEBIUS_PROBE.json",
+    "MODEL_RESPONSE_1.json",
+    "REQUEST_BUDGET.json"
+  ],
+  "approvalReviewFirstAttempt": "Rejected before execution; synthetic credential-shaped example replaced with explicit DEMO_ONLY placeholder, checked offline, then approved execution succeeded."
+}

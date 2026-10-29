@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-10-28T15:55:34.991Z",
+  "baseURL": "http://127.0.0.1:3013",
+  "results": [
+    {
+      "name": "editing invalidates the previous audit",
+      "passed": true
+    },
+    {
+      "name": "HTTP failures offer visible recovery",
+      "passed": true
+    },
+    {
+      "name": "failed sessions retain their actual score and provenance",
+      "passed": true
+    },
+    {
+      "name": "mobile keeps source scrolling inside its pane",
+      "passed": true
+    },
+    {
+      "name": "changing result tabs starts at the new summary",
+      "passed": true
+    },
+    {
+      "name": "an unavailable health check stays unknown",
+      "passed": true
+    },
+    {
+      "name": "incomplete API responses show a recoverable error",
+      "passed": true
+    },
+    {
+      "name": "stopping the demo prevents late transitions and unlocks editing",
+      "passed": true
+    },
+    {
+      "name": "partial repair findings navigate the source actually shown",
+      "passed": true
+    },
+    {
+      "name": "smallest supported header keeps both controls reachable",
+      "passed": true
+    }
+  ]
+}

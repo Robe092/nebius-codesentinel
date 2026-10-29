@@ -1,0 +1,20 @@
+npm notice run nebius-nvidia-agent@0.1.0 test:ui
+npm notice run node --import tsx scripts/interface-regression-test.ts
+PASS editing invalidates the previous audit
+PASS HTTP failures offer visible recovery
+PASS failed sessions retain their actual score and provenance
+PASS mobile keeps source scrolling inside its pane
+PASS changing result tabs starts at the new summary
+PASS an unavailable health check stays unknown
+PASS incomplete API responses show a recoverable error
+PASS stopping the demo prevents late transitions and unlocks editing
+FAIL partial repair findings navigate the source actually shown: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ ''
+- 'eval("untrusted");'
+
+FAIL smallest supported header keeps both controls reachable: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
+

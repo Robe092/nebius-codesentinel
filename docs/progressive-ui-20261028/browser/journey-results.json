@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-10-28T15:53:55.676Z",
+  "baseURL": "http://127.0.0.1:3013",
+  "mode": "MOCK_SIMULATED",
+  "checks": [
+    "Initial workspace and explicit simulation provenance",
+    "Real audit response drives the visible findings and score",
+    "Finding navigation selects the actual source line",
+    "Repair trace shows the returned score and actual mode",
+    "Full-width comparison uses actual source lines rather than the simulated diff summary",
+    "Evidence contains measured request timings without invented comparison metrics",
+    "Downloaded JSON contains the source and the actual session record",
+    "Result tabs support keyboard navigation and selection",
+    "Clean source needs no model call and changing scenarios clears previous results",
+    "Empty source disables analysis and keeps repair unavailable",
+    "Audit layout at 390 × 844",
+    "Audit layout at 768 × 1024",
+    "Audit layout at 1024 × 768",
+    "Audit layout at 1920 × 1080",
+    "Guided demonstration waits for responses and opens the returned source comparison",
+    "No uncaught browser errors throughout the journey"
+  ]
+}

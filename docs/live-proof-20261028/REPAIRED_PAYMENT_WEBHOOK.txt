@@ -1,0 +1,5 @@
+// Payment webhook invariant test fixture
+const STRIPE_SECRET = process.env.API_CREDENTIAL;
+export async function handlePayment(event: any) {
+  return { status: "processed", email: event.customer?.email };
+}

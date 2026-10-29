@@ -1,0 +1,16 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "fps": 30.0,
+  "video_seconds": 109.66666666666667,
+  "audio_seconds": 109.666,
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "file_bytes": 5803923,
+  "audio_channels": 1,
+  "sha256": "9c5a39c388931cb571990ab6f104a172a43da802eaa6e0e645f1909675dd476f",
+  "captions": 47,
+  "full_decode": "PASS",
+  "source_audio": "ElevenLabs track only; original capture audio omitted",
+  "voice_offset_seconds": 0.6
+}

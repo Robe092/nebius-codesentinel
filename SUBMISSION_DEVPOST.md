@@ -1,112 +1,118 @@
-# 📝 Nebius CodeSentinel — Dossier de Soumission Officiel Devpost
+# 🛡️ Nebius CodeSentinel — Official Devpost Submission
 
-> **Hackathon** : Nebius x NVIDIA Global AI Hackathon  
-> **Track** : *Coding and Agentic Engineering*  
-> **Repository** : `https://github.com/Robe092/nebius-codesentinel`  
-> **Demo URL** : `http://localhost:3005` (Ready for production cloud deployment)
-
----
-
-## 1. Titre & Tagline Percutante
-
-- **Nom du Projet** : **Nebius CodeSentinel**
-- **Tagline** : *L'agent autonome d'audit et d'auto-guérison de code propulsé par la Nebius Token Factory et le modèle NVIDIA Nemotron, garantissant 100 % de conformité de sécurité et zéro régression.*
+> **Hackathon**: Nebius x NVIDIA Global AI Hackathon  
+> **Track**: *Coding and Agentic Engineering*  
+> **Repository**: `https://github.com/Robe092/nebius-codesentinel`  
+> **Test Build & Instructions**: See [`JUDGE_TESTING.md`](JUDGE_TESTING.md) for local evaluation and review walkthrough  
+> **Video Demonstration**: [CodeSentinel — public video, 1 min 50](https://youtu.be/6gfGnUcbGi0)  
 
 ---
 
-## 2. Le Problème (The Problem)
+## 1. Project Title & Tagline
 
-Dans l'ère de l'ingénierie agentique et des architectures automatisées (pipelines n8n, workflows CI/CD, webhooks critiques de paiement), les erreurs humaines et les dérives de code coûtent des millions d'euros :
-1. **Fuites de secrets en clair** : Clés Stripe, tokens OpenAI ou PATs GitHub codés en dur dans les scripts, exposés lors des déploiements.
-2. **Dispatches externes non régulés** : Notifications massives envoyées sur Slack, Discord ou email sans validation préalable humaine (HITL) ni circuit breaker.
-3. **Anomalies de syntaxe et de graphes** : Oubli des préfixes `$json` dans les expressions d'orchestration n8n, créant des ruptures silencieuses en production.
-4. **L'échec des LLMs génériques** : Les modèles conventionnels non spécialisés hallucinent fréquemment des fonctions inexistantes, cassent le code adjacent ou tournent en boucle infinie lors des tentatives de réparation.
+- **Project Name**: **Nebius CodeSentinel**
+- **Tagline**: *Autonomous code audit and self-healing agent powered by Nebius Token Factory and NVIDIA Nemotron, combining deterministic rule checks, AST structural preservation, TypeScript semantic verification, and anti-regression circuit breakers.*
 
 ---
 
-## 3. La Solution & Ce qu'elle Fait (What It Does)
+## 2. The Problem & Target Audience
 
-**Nebius CodeSentinel** est un studio agentique interactif complet combinant l'analyse statique déterministe (AST & regex) et le moteur de raisonnement de pointe **NVIDIA Nemotron** servi par la **Nebius Token Factory**.
+### Target Audience
+Developers, DevOps teams, and automation engineers maintaining mission-critical webhook handlers, CI/CD scripts, and orchestration workflows (such as n8n workflows, payment processors, and automated notifications).
 
-### Parcours Utilisateur en 3 Étapes :
-1. **Inspection & Détection Déterministe** : L'utilisateur sélectionne ou colle son fichier source. Le moteur d'analyse statique extrait instantanément les violations avec calcul de pénalités (Score de conformité de 0 à 100).
-2. **Raisonnement & Génération de Patch par NVIDIA Nemotron** : Les violations et le contexte d'exécution sont transmis à la Nebius Token Factory. Le modèle `nvidia/nemotron-3-super-120b` formule un raisonnement pas-à-pas (Chain of Thought), préserve les invariants et produit un patch unifié (`diff`) complet.
-3. **Boucle d'Auto-Guérison avec Circuit Breaker** : Le code réparé est immédiatement re-vérifié par un banc de tests d'invariants automatisé. Si le test valide l'amélioration sans régression, le code est certifié `READY (PASS)`. En cas d'échec persistant après 3 tentatives, le **Circuit Breaker** bloque l'exécution pour protéger l'intégrité du système.
-
----
-
-## 4. Le Rôle Clé de la Technologie Sponsor (How We Used Nebius & NVIDIA)
-
-Le projet repose nativement sur deux piliers technologiques majeurs :
-
-1. **Nebius Token Factory (`api.studio.nebius.ai/v1/`)** :
-   - Exploitation de l'API compatible OpenAI de Nebius pour streamer et exécuter l'inférence avec une latence ultra-faible ($\sim 840$ ms sur infrastructure cluster GPU H100).
-   - Remplacement transparent sans friction du connecteur SDK avec résilience automatique (fallback sur `meta-llama/Meta-Llama-3.1-70B-Instruct`).
-2. **Modèles NVIDIA Nemotron (Nemotron-3 Super 120B / Nano 30B)** :
-   - Capacité MoE (Mixture of Experts) exceptionnelle pour le raisonnement logique et l'ingénierie logicielle.
-   - Contrairement aux modèles généralistes qui hallucinent sur la syntaxe, Nemotron a démontré un taux de **100 % de conformité de syntaxe** et **96,4 % de succès au 1er passage**.
+### The Problem
+Automated workflow scripts are increasingly deployed in production, but they frequently harbor high-risk vulnerabilities:
+1. **Plaintext Credential Leaks (`SEC-001`)**: Stripe secrets, API bearer tokens, and GitHub personal access tokens accidentally committed into script source code.
+2. **Unguarded External Communications (`GOV-001`)**: High-volume messaging to Slack, Discord, or email dispatchers executed without Human-in-the-Loop (HITL) gatekeepers or circuit breakers.
+3. **Expression Syntax Anomalies (`SYN-001`, `SYN-002`)**: Missing leading `$` in `$json` expressions or empty placeholder blocks causing silent runtime failures in production.
+4. **The Destructive Patch Problem in Generic LLMs**: When asked to fix code, generic models frequently propose destructive patches—wiping out required exported functions, altering external API contracts, or returning empty strings that pass superficial tests while destroying business logic.
 
 ---
 
-## 5. Comparateur A/B : Preuve Chiffrée de la Supériorité Nebius + NVIDIA
+## 3. What It Does (The Solution)
 
-| Dimension Mesurée | Nebius Token Factory + NVIDIA Nemotron | Baseline Générique Cloud Standard | Gain Différentiel |
+**Nebius CodeSentinel** is an autonomous agentic workspace and CLI tool that pairs **deterministic rule inspection** with the reasoning power of **NVIDIA Nemotron** hosted on **Nebius Token Factory**.
+
+### The 3-Step Review Journey: Detect → Repair → Verify
+
+1. **Detect (Deterministic Lexical & AST Rules)**:
+   - The developer selects or pastes target code in the dark-themed cockpit studio or runs `npm run cli -- audit`.
+   - The engine audits the code against critical security, expression syntax, and governance invariants, computing a transparent compliance score (0 to 100).
+2. **Repair (NVIDIA Nemotron on Nebius Token Factory)**:
+   - The agent constructs a structured repair request and queries NVIDIA Nemotron via Nebius Token Factory.
+   - **AST Structural Preservation Guard (`checkPatchStructure`)**: Before any candidate patch is considered, an AST guard checks that the proposed repair is non-empty and strictly preserves all original exported functions, types, and parameter signatures. Any destructive proposal is immediately rejected, preserving the original code.
+3. **Verify (Multi-Layer Invariant & TypeScript Semantic Fencing)**:
+   - The repaired code is checked against static invariants and parsed by the TypeScript Compiler API in memory (`ts.createProgram`) to catch semantic type errors (such as TS2322) before acceptance.
+   - **Anti-Regression Guard**: A patch is rejected if it degrades the compliance score.
+   - **Truthful Status Reporting**: If targeted findings remain open after an accepted improvement, the system explicitly reports `PARTIAL` rather than claiming complete `SUCCESS`.
+   - **Circuit Breaker**: If valid repairs cannot be achieved within 3 iterations, execution halts safely.
+
+---
+
+## 4. How We Used Nebius & NVIDIA (Sponsor Technologies)
+
+Nebius CodeSentinel is built natively around Nebius and NVIDIA infrastructure:
+
+1. **Nebius Token Factory (`https://api.tokenfactory.nebius.com/v1/`)**:
+   - OpenAI-compatible `/v1/chat/completions` API integration with Nebius AI Cloud.
+   - Bounded inference client enforcing strict operational boundaries: max 4,000 output tokens, zero automatic SDK retries, an 8,192-byte serialized payload cap, and a per-run limit of 2 requests to protect developers against unexpected token consumption.
+   - Full provenance tracking retaining real provider response IDs, model identifiers, and token usage metrics.
+2. **NVIDIA Nemotron Models (`nvidia/nemotron-3-super-120b-a12b` & `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`)**:
+   - Leverages Nemotron's Mixture-of-Experts (MoE) architecture for rigorous code reasoning and structured JSON output generation (`response_format: { type: "json_object" }`).
+3. **Controlled Live Evidence on Nebius**:
+   - A genuine live repair was executed and recorded against Nebius Token Factory on October 28, 2026, using `nvidia/nemotron-3-super-120b-a12b`:
+     - Response ID: `chatcmpl-aa293e018d7955bb`
+     - Tokens consumed: 143 prompt tokens, 736 completion tokens (879 total tokens)
+     - Estimated inference cost: ~$0.0007053
+     - The repair successfully extracted credentials to `process.env.API_CREDENTIAL` and passed all static and TypeScript semantic checks.
+     - Evidence is permanently documented in [`docs/live-proof-20261028/`](docs/live-proof-20261028/).
+
+---
+
+## 5. Architectural Comparison: Defensible Guarantees
+
+| Dimension | Nebius CodeSentinel (Nebius + Nemotron) | Generic Unbounded LLM Approach | Developer Benefit |
 |---|---|---|---|
-| **Latence d'inférence (Patch complet)** | **840 ms** (GPU H100 Nebius) | **3 450 ms** (Files d'attente mutualisées) | **4,1x plus rapide** |
-| **Taux de Zéro Hallucination & Syntaxe** | **100,0 %** (Conformité stricte) | **58,3 %** (Oublis `$json`, fermetures rompues) | **+41,7 % de conformité** |
-| **Précision de réparation au 1er passage**| **96,4 %** (Raisonnement MoE pas-à-pas) | **61,2 %** (Casse la logique adjacente) | **+35,2 % au 1er passage** |
-| **Coût par 1M de tokens d'auto-guérison** | **$1,80** (Tarification Nebius avantageuse) | **$15,00** (Modèles propriétaires fermés) | **8,3x plus économique** |
-| **Sécurité & Protection Anti-Régression** | **100 %** (Circuit Breaker $\le 3$ itérations) | **0 %** (Risque de réécriture infinie) | **Zéro Régression Garanti** |
+| **API Protocol** | Standard OpenAI-compatible `/v1/chat/completions` on Nebius AI Cloud | Proprietary or fragmented endpoints | Seamless integration without vendor lock-in |
+| **Patch Output Format** | Strict JSON schema (`repairedCode`, `explanation`, `diff`) | Conversational markdown text | Direct deterministic parsing without fragile regex |
+| **Structural Integrity** | `checkPatchStructure` AST guard rejects empty code or dropped exports | Unconstrained text replacement | External API contracts and function exports cannot be dropped |
+| **Type Checking** | In-memory TypeScript Compiler API semantic diagnostics | None prior to file overwrite | Catches TS2322 type mismatches before saving |
+| **Incomplete Outcomes** | Explicit `PARTIAL` status with manual review required | Over-optimistic "All Fixed" claims | Incomplete repairs are never marked as complete `SUCCESS` |
+| **Cost & Loop Boundaries** | 3-iteration circuit breaker + bounded token budgets | Risk of unbounded runaway re-prompting | Financial and token exhaustion safety |
+| **Execution Isolation** | Host process execution disabled (`NOT_VERIFIED`) | Untrusted arbitrary `eval` in host process | Zero host breakout risk from generated code |
+
+*(Note: Numerical latency multipliers and cost deltas are unmeasured and not certified without multi-run telemetry across platforms).*
 
 ---
 
-## 6. Retour d'Expérience Développeur sur Nebius (Mandatory Developer Feedback)
+## 6. Developer Feedback for the Nebius Team
 
-*Dans le cadre du défi Nebius, nous avons soumis l'infrastructure à une batterie de tests intensifs. Voici nos observations directes :*
+Based on our direct integration and test-driven evaluation with Nebius Token Factory, here is our technical feedback:
 
-### Ce qui fonctionne remarquablement bien :
-- **Compatibilité Drop-in OpenAI** : L'adaptation de notre client TypeScript a nécessité moins de 5 minutes grâce au respect rigoureux de la spécification de `/v1/chat/completions`.
-- **Régularité de la Latence** : Sur les requêtes de code structuré, le Time to First Token (TTFT) reste inférieur à 200 ms, évitant les gelées d'interface courantes sur d'autres clouds.
-- **Support des Formats JSON Contraints** : Le paramètre `response_format: { type: "json_object" }` est parfaitement respecté par les modèles NVIDIA sur Nebius, évitant le parsing d'artefacts markdown superflus.
+### What Worked Exceptionally Well:
+- **Drop-in OpenAI SDK Compatibility**: Direct compatibility with the official `openai` TypeScript client made configuring baseURL and authentication completely seamless.
+- **Reliable JSON Mode**: The `response_format: { type: "json_object" }` parameter reliably produced parseable JSON without hallucinated markdown wrappers.
+- **Fast MoE Patch Reasoning**: NVIDIA Nemotron-3 Super produced well-formed, minimal unified diffs that addressed security invariants while respecting surrounding code.
 
-### Suggestions d'améliorations constructives pour l'équipe Nebius :
-1. **Endpoint de découverte des modèles dynamiques (`/v1/models`)** : Enrichir les métadonnées retournées par `/v1/models` avec la taille de contexte maximale (`context_window`) et le type de quantization (FP8, INT4) pour optimiser les prompts côté client.
-2. **Documentation des quotas et headers de rate-limit** : Ajouter les headers standards (`x-ratelimit-remaining-tokens`, `x-ratelimit-reset`) dans les réponses HTTP pour affiner le circuit breaker applicatif.
-3. **Playground de Tool Calling natif** : Déployer dans la console Nebius Studio un onglet interactif pour tester les schémas de tools/fonctions directement sur les modèles Nemotron.
-
----
-
-## 7. Comment Nous l'Avons Construit (How We Built It)
-
-- **Frontend & Studio Interactif** : Next.js 15 (App Router), React 19, Tailwind CSS, Lucide Icons, Dark Studio Palette avec accents verts NVIDIA (`#76B900`) et violets Nebius (`#7C3AED`).
-- **Moteur d'Audit & Analyseur Déterministe** : TypeScript pur inspiré de `n8n_code_analyzer.py` et `gitlab-duo-sentinel`, avec détection d'entropie de secrets, contrôle d'expressions régulières et analyse de fenêtres de contexte.
-- **Orchestrateur Agentique** : Machine à états finis (`SelfHealingOrchestrator`) gérant l'injonction de feedback, l'évaluation des invariants et le déclenchement du circuit breaker.
-- **Validation Contradictoire & Tests E2E** : Puppeteer + Google Chrome headless vérifiant le parcours complet dans le navigateur (audit, patch, diff, benchmark) avec captures d'écrans certifiées.
+### Constructive Suggestions for the Nebius Engineering Team:
+1. **Dynamic Model Capabilities in `/v1/models`**: Returning context window size (`context_window`) and quantization precision (FP8, INT4) in `/v1/models` would help client applications dynamically tune token limits.
+2. **Standard Rate-Limit Headers**: Exposing remaining token quotas via standard HTTP headers (`x-ratelimit-remaining-tokens`, `x-ratelimit-reset`) would allow client-side circuit breakers to react proactively.
+3. **Native Tool-Calling Testing in Studio**: Adding an interactive function-calling schema playground in the Nebius Token Factory web console would accelerate developer adoption.
 
 ---
 
-## 8. Les Défis Rencontrés & Solutions
+## 7. How We Built It
 
-- **Défi 1 : Élimination des régressions lors des retouches de code**  
-  *Solution* : Mise en place d'une vérification d'invariants post-patch : un patch est rejeté si le score de conformité baisse ou si une nouvelle faille apparaît, avec ré-injection automatique du message d'erreur dans l'itération suivante.
-- **Défi 2 : Distinction entre déclarations d'import et dispatches réseau actifs**  
-  *Solution* : Raffinement de l'analyseur pour exclure les lignes d'import (`import { dispatchSlackAlert }...`) afin de ne sanctionner que les appels effectifs sans garde-fou HITL.
-
----
-
-## 9. Fiertés & Livrables
-
-- ✅ **25/25 Tests Automatisés Validés** (Unitaires, Routes API, Tests CLI & Invariants avec 100% de réussite).
-- ✅ **Test Navigateur E2E Puppeteer Réussi à 100 %** avec captures d'écrans certifiées dans [`docs/screenshots/`](file:///Users/narjhandamoiseau/Documents/n8n-integration/n8n-integration/projects/nebius-nvidia-agent/docs/screenshots/).
-- ✅ **Audit Indépendant Gemini Argon : 97 / 100** (*Grand Prize Contender* - Rapport complet dans [`docs/GEMINI_ARGON_AUDIT_REPORT.md`](file:///Users/narjhandamoiseau/Documents/n8n-integration/n8n-integration/projects/nebius-nvidia-agent/docs/GEMINI_ARGON_AUDIT_REPORT.md)).
-- ✅ **CLI Polyvalent Déployé** : audit, réparation locale et intégration CI/CD pre-commit (`npm run cli`).
-- ✅ **Compilation & Typage Parfaits** : 0 erreur TypeScript, build Next.js 15 en 1,4 s.
-- ✅ **Démarrage en 1 commande** : `npm install && npm run build && npm start`.
+- **Frontend Cockpit Studio**: Next.js 15 (App Router), React 19, Tailwind CSS, Lucide React icons. Accessible dark-theme UI with keyboard navigation and line-by-line diff comparison.
+- **Rule Engine & AST Analyzer**: Deterministic rule analysis inspired by `n8n_code_analyzer.py` and GitLab Duo Sentinel, augmented with TypeScript AST checks for Human-in-the-Loop conditional guards (`GOV-001`).
+- **Structural Patch Guard**: TypeScript Compiler API AST checker (`checkPatchStructure`) ensuring exports, signatures, and code statements are never wiped out.
+- **Testing Suite**: 98 unit and integration tests running with Node.js built-in test runner; 30 headless Chrome browser checks via Puppeteer.
+- **Security Quarantine**: Untrusted model-generated code is never executed in the host application process (`NOT_VERIFIED`).
 
 ---
 
-## 10. La Suite (What's Next)
+## 8. What's Next for Nebius CodeSentinel
 
-1. Déploiement d'un GitHub Action / GitLab CI Sentinel autonome analysant les Pull Requests en temps réel via la Nebius Token Factory.
-2. Connecteur direct vers l'API n8n locale pour réparer à chaud les workflows en production sans intervention manuelle.
-3. Extension multi-langages (Python, Go, Rust) en tirant parti des futures versions de NVIDIA Nemotron sur Nebius Cloud.
+- **Isolated Ephemeral Micro-VMs**: Introducing Firecracker micro-VMs or gVisor sandboxes to execute optional dynamic integration tests without exposing host infrastructure.
+- **Multi-File Workspace Refactoring**: Expanding AST structural verification from single-file webhooks to entire monorepos and multi-step pipeline architectures.
+- **Native CI/CD Marketplace Actions**: Publishing pre-configured GitHub Actions and GitLab CI components for automated PR code reviews backed by Nebius Token Factory.

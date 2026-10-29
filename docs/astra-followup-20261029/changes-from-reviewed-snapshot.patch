@@ -1,0 +1,274 @@
+--- a/src/lib/nebius-client.ts
++++ b/src/lib/nebius-client.ts
+@@ -114,7 +114,12 @@
+ 2. Formulate step-by-step reasoning explaining why each issue occurred and how to resolve it safely.
+ 3. Preserve all non-impacted business logic, comments, and contracts (Anti-Regression).
+ 4. Provide the exact unified diff and the complete, pristine repaired code.
+-5. Format your output strictly as a JSON object with this exact structure:
++5. Use the existing fixture environment when repairing automation examples:
++   - verifyHumanApproval(event?: any): Promise<boolean> is an available global approval helper. Await it in a conditional before dispatching an external notification.
++   - $json: any is the available automation input; process.env exposes environment variables as string | undefined.
++   - The existing ./notifier module exports dispatchSlackAlert(opts: any): Promise<any>.
++   Preserve helpers already defined in the source. Do not invent new imports or undeclared helpers such as ./guardrails; the verifier cannot resolve arbitrary application modules. These declarations support typechecking only, not runtime execution.
++6. Format your output strictly as a JSON object with this exact structure:
+ {
+   "reasoningSteps": ["Step 1...", "Step 2..."],
+   "explanation": "Executive summary of the fix",
+--- a/samples/clean_workflow.ts
++++ b/samples/clean_workflow.ts
+@@ -1,6 +1,6 @@
+-// Sample Compliant Production Workflow for Nebius CodeSentinel
++// Sample workflow for CodeSentinel's static and TypeScript fixture environment.
++// The host must provide approval, input and notifier implementations at runtime.
+ import { dispatchSlackAlert } from "./notifier";
+-import { hitlGatekeeper } from "./guardrails";
+ 
+ // Invariant Compliant: Environment variable
+ const STRIPE_SECRET = process.env.STRIPE_SECRET || "";
+@@ -12,7 +12,7 @@
+ 
+   if (amount > 10000) {
+     // Invariant Compliant: Guarded by Human-in-the-Loop gatekeeper
+-    if (await hitlGatekeeper.approve({ amount, customerEmail })) {
++    if (await verifyHumanApproval(event)) {
+       await dispatchSlackAlert({
+         channel: "#high-value-transactions",
+         text: "Approved high payment: " + amount,
+--- a/src/tests/fixture-environment.test.ts
++++ b/src/tests/fixture-environment.test.ts
+@@ -0,0 +1,49 @@
++import test from "node:test";
++import assert from "node:assert/strict";
++import { readFileSync } from "node:fs";
++import { CodeAnalyzer } from "../lib/code-analyzer.js";
++import { createFixtureVerifier } from "../lib/fixture-verifier.js";
++import { NebiusClient } from "../lib/nebius-client.js";
++import { WORKSPACE_SAMPLES } from "../lib/workspace-samples.js";
++
++test("The shipped clean workflow passes the same verifier used for repair proposals", async () => {
++  const code = readFileSync("samples/clean_workflow.ts", "utf8");
++  const result = await createFixtureVerifier("clean_workflow.ts")(code);
++  assert.equal(result.passed, true, result.output);
++  assert.equal(result.details.staticScore, 100);
++  assert.equal(result.details.typecheckPassed, true);
++  assert.equal(result.details.runtimeExecution, "NOT_VERIFIED");
++});
++
++test("Live repair requests describe the fixture helpers required to typecheck the complete payment example", async () => {
++  // Only the external transport is replaced: prompt creation, bounded inference,
++  // proposal parsing, static analysis and semantic verification are real.
++  const client = new NebiusClient({ mockMode: false, apiKey: "OFFLINE_CONTRACT_FIXTURE", baseURL: "https://offline.invalid/v1/" });
++  const code = WORKSPACE_SAMPLES[0].code;
++  const report = CodeAnalyzer.analyze(code, "payment_webhook.ts");
++  const repairedCode = readFileSync("samples/clean_workflow.ts", "utf8");
++  let systemMessage = "";
++  (client as any).openai = {
++    chat: { completions: { create: async (request: any) => {
++      systemMessage = request.messages.find((message: any) => message.role === "system").content;
++      return {
++        id: "offline-fixture-contract-response", object: "chat.completion", created: 0,
++        model: "nvidia/nemotron-3-super-120b-a12b",
++        choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: JSON.stringify({
++          reasoningSteps: ["Controlled offline contract fixture"], explanation: "Fixture environment compatibility",
++          diff: "", repairedCode, fixedIssueIds: report.issues.map(issue => issue.id), confidenceScore: 1,
++        }) } }],
++        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
++      };
++    } } },
++  };
++  const patch = await client.generatePatch({ code, issues: report.issues });
++  assert.match(systemMessage, /verifyHumanApproval\(event\??:\s*any\):\s*Promise<boolean>/);
++  assert.match(systemMessage, /\$json/);
++  assert.match(systemMessage, /process\.env/);
++  assert.match(systemMessage, /\.\/notifier/);
++  const verification = await createFixtureVerifier("payment_webhook.ts")(patch.repairedCode);
++  assert.equal(verification.passed, true, verification.output);
++  assert.equal(verification.details.staticScore, 100);
++  assert.equal(verification.details.runtimeExecution, "NOT_VERIFIED");
++});
+--- a/README.md
++++ b/README.md
+@@ -7,7 +7,7 @@
+ [![Nebius Token Factory](https://img.shields.io/badge/Infra-Nebius%20AI%20Cloud-7C3AED.svg)](https://studio.nebius.ai)
+ [![Next.js 15](https://img.shields.io/badge/Cockpit-Next.js%2015%20%7C%20Tailwind-black.svg)](https://nextjs.org)
+ [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+-[![Tests Passing](https://img.shields.io/badge/Automated%20Tests-96%2F96%20PASS-emerald.svg)]()
++[![Tests Passing](https://img.shields.io/badge/Automated%20Tests-98%2F98%20PASS-emerald.svg)]()
+ [![E2E Headless Chrome](https://img.shields.io/badge/E2E%20Puppeteer-100%25%20PASS-brightgreen.svg)]()
+ [![Verification Layers](https://img.shields.io/badge/Verification-Static%20%2B%20TS%20Semantic%20Check-blue.svg)]()
+ [![Judge Testing Guide](https://img.shields.io/badge/Guide-JUDGE__TESTING.md-blueviolet.svg)](JUDGE_TESTING.md)
+@@ -25,6 +25,10 @@
+ **Nebius CodeSentinel** is an autonomous agentic system that marries **deterministic lexical and pattern-based rule analysis** with the **reasoning prowess of NVIDIA Nemotron** served through **Nebius Token Factory**. It executes an iterative **Self-Healing Loop** with an automated **Circuit Breaker** to enforce non-regression score guards and TypeScript semantic diagnostics on repaired patches.
+ 
+ ---
++
++## Video demonstration
++
++The [final English video](deliverables/video-20261029/CodeSentinel_EN_1080p.mp4) lasts about **1 min 50**, with English captions. The [final script](DEMO_VIDEO_SCRIPT.md) distinguishes the simulated UI journey from the separately saved real NVIDIA/Nebius response. Its public YouTube link is pending publication.
+ 
+ ## 🏛️ Architecture & Agentic Flow
+ 
+@@ -74,6 +78,8 @@
+ *(If `NEBIUS_API_KEY` is omitted, the system seamlessly activates zero-credit deterministic simulation tagged `MOCK_SIMULATED` so reviewers can evaluate the entire agent and UI without paying for tokens).*
+ 
+ Keep `MOCK_MODE=true` for rehearsals. A controlled live repair was verified separately on 2026-10-28 using `nvidia/nemotron-3-super-120b-a12b`: one request, 879 tokens, estimated inference cost $0.0007053 before tax. This does not claim that the simulated UI run is a live model response. Evidence is in [`docs/live-proof-20261028/`](docs/live-proof-20261028/).
++
++The automation examples target a defined fixture environment: `$json`, `process.env`, the async global `verifyHumanApproval(event)`, and the `./notifier` module. The live repair prompt describes these available symbols. They support static and TypeScript checks; a runtime host must supply the actual input, approval and notification implementations.
+ 
+ ### 3. Run Automated Tests
+ ```bash
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -1,7 +1,7 @@
+ # 🏛️ Nebius CodeSentinel — System Architecture & Invariants
+ 
+ ## 1. Technical Stack & Isolation
+-- **Directory**: `projects/nebius-nvidia-agent/` (Strictly isolated project workspace).
++- **Repository layout**: The standalone repository root contains `package.json`, `src/`, `LICENSE` and `JUDGE_TESTING.md`.
+ - **Core Orchestrator**: TypeScript, Node.js, Zod 3.x schema contracts, TypeScript Compiler API.
+ - **Frontend / Cockpit**: Next.js 15 (App Router), Tailwind CSS, Lucide React icons.
+ - **Inference Cloud**: Nebius Token Factory (`https://api.tokenfactory.nebius.com/v1/`).
+--- a/JUDGE_TESTING.md
++++ b/JUDGE_TESTING.md
+@@ -18,11 +18,13 @@
+ ```
+ 
+ ### Step 2: Run the Offline Test Suite
+-Run the comprehensive offline test suite (96 automated tests covering static rules, structural AST checks, shared session budgets, approval guardrails, and CLI routes):
++Run the comprehensive offline test suite (98 automated tests covering static rules, structural AST checks, shared session budgets, approval guardrails, and CLI routes):
+ ```bash
+ MOCK_MODE=true npm test
+ ```
+-*Expected result:* 100% of tests pass (96/96) in under 12 seconds with **zero network requests**.
++The suite uses injected offline transports to exercise the live-probe library. Run it with `ENABLE_LIVE_REPAIR` unset; explicitly setting it to `false` also blocks those injected transports. Keep the application server in simulation and do not run `verify:live` for this check.
++
++*Expected result:* 100% of tests pass (98/98) with **zero provider network requests**. Duration varies by machine.
+ 
+ ### Step 3: Run Sequential Build and Typecheck
+ To ensure zero build or TypeScript errors without race conditions:
+--- a/DEMO_VIDEO_SCRIPT.md
++++ b/DEMO_VIDEO_SCRIPT.md
+@@ -1,81 +1,30 @@
+-# 🎬 Video Demonstration Script (Duration: ~2 min 40 sec)
++# CodeSentinel — Final video and narration
+ 
+-> **Project**: Nebius CodeSentinel\
+-> **Hackathon**: Nebius x NVIDIA Global AI Hackathon (Track: *Coding and Agentic Engineering*)\
+-> **Target Audience**: Official Nebius and NVIDIA Jury Members\
+-> **Format**: Screen recording and voiceover. UI rehearsal is simulated; the separate live proof is a saved response from the actual Nebius call. No API call is needed while recording.
++The current video is **109.667 seconds (about 1 min 50)**, exported on 29 October 2026 in 1920 × 1080 at 30 fps, H.264/AAC, with English narration and 47 burned-in English captions.
+ 
+----
++- [Final video](deliverables/video-20261029/CodeSentinel_EN_1080p.mp4)
++- [Exact narration](deliverables/video-20261029/NARRATION_EN.txt)
++- [Timed English subtitles](deliverables/video-20261029/CodeSentinel_EN.srt)
++- [Technical export verification](deliverables/video-20261029/VERIFICATION.json)
++- [Editing notes and limitations](deliverables/video-20261029/README_FR.md)
+ 
+-## ⏱️ Video Timeline Overview
++The earlier 2 min 40 rehearsal script is preserved in [the follow-up record](docs/astra-followup-20261029/DEMO_VIDEO_SCRIPT_previous.md.txt). It describes preparation, not the final cut.
+ 
+-```mermaid
+-flowchart LR
+-    S1["0:00 - 0:20<br>The Problem"] --> S2["0:20 - 0:40<br>The Workspace"]
+-    S2 --> S3["0:40 - 1:20<br>Audit & Simulated Repair"]
+-    S3 --> S4["1:20 - 2:00<br>Changes & Evidence"]
+-    S4 --> S5["2:00 - 2:25<br>Recorded Live Nebius Proof"]
+-    S5 --> S6["2:25 - 2:40<br>Conclusion"]
+-```
++| Final time | What is shown | Provenance |
++| --- | --- | --- |
++| 00:00–00:12 | Problem and project introduction | Editorial opening with an actual example excerpt |
++| 00:12–00:28 | Workspace and payment webhook source | Recorded interface; simulation disclosed |
++| 00:28–00:39 | Analyze code, three findings, initial 45/100 rule score | Simulated interface run |
++| 00:39–00:45 | Repair source and 100/100 configured-rule result | Simulated proposal, not a new NVIDIA response |
++| 00:45–01:04 | Side-by-side source comparison and verification limits | Recorded comparison; code is not executed |
++| 01:04–01:17 | 14 targeted tests and their saved runner output | Local offline tests recorded on 29 October |
++| 01:17–01:40 | Saved NVIDIA/Nebius response, returned code and provider metadata | One controlled real request from 28 October |
++| 01:40–01:50 | Conclusion and developer review | Editorial closing |
+ 
+----
++## Scope of the demonstration
+ 
+-### 🎬 Scene 1: The Problem (0:00 – 0:20)
+-- **On Screen**: Split view showing a sample webhook handler with a fictitious hardcoded credential and an unguarded communication dispatch.
+-- **Presenter Voiceover (EN)**:
+-  > *"Automation scripts can leak hardcoded credentials, send notifications without approval, or fail because of an incorrect expression. CodeSentinel helps developers find these configured issues, inspect a repair proposal and keep a record of the checks."*
++The three-issue interface repair is deterministic simulation, identified in the image and narration. The separate real model response repairs a fictitious credential in a smaller controlled fixture. Its provenance is preserved in `docs/live-proof-20261028/`.
+ 
+----
++The rule score covers configured checks. Static rules, TypeScript diagnostics and structural checks do not prove runtime behavior or general business equivalence. Generated code is never executed by the application.
+ 
+-### 🎬 Scene 2: Introducing CodeSentinel (0:20 – 0:40)
+-- **On Screen**: Transition to the **CodeSentinel Workspace** (`localhost:3005`). Clean dark workbench interface with the wide source editor, compact example selector and one primary **Analyze code** action.
+-- **Presenter Voiceover (EN)**:
+-  > *"Choose an example or paste your own code, then start with Analyze code. Results appear after analysis, and Repair source proposes changes you can review. This interface demonstration uses deterministic simulation, labelled MOCK_SIMULATED, to keep rehearsals free. We will also show the recorded evidence from an actual NVIDIA Nemotron repair on Nebius Token Factory."*
+-
+----
+-
+-### 🎬 Scene 3: Audit and Simulated Repair (0:40 – 1:20)
+-- **On Screen**:
+-  1. Click **"Analyze code"** on `payment_webhook.ts`. The **Findings** panel surfaces the configured rule violations:
+-     - 🔴 `SEC-001` (Line 4): Plaintext credential detected (`STRIPE_SECRET`).
+-     - 🟡 `SYN-001` (Line 8): Missing leading `$` in `$json` expression (`json.customer.email`).
+-     - 🟠 `GOV-001` (Line 11): Unguarded direct communication dispatch without HITL gatekeeper (`dispatchSlackAlert`).
+-     - Initial compliance score: **45 / 100 [FAIL]**.
+-  2. Click **"Repair source"**. The self-healing loop triggers.
+-  3. The **Repair** tab displays the execution trace:
+-     - Step 1: Invariant detection.
+-     - Step 2: Simulated repair trace, labelled `MOCK_SIMULATED`.
+-     - Step 3: Proposed patch and static verification results.
+-- **Presenter Voiceover (EN)**:
+-  > *"Clicking 'Analyze code' detects three configured rule violations, scoring this sample at 45 out of 100. We click 'Repair source'. This run uses deterministic simulation, labelled MOCK_SIMULATED. Its trace illustrates the proposed repair: moving the credential to an environment variable, adding a human approval gate before the Slack dispatch, and correcting the dollar-json expression."*
+-
+----
+-
+-### 🎬 Scene 4: Changes and Evidence (1:20 – 2:00)
+-- **On Screen**:
+-  1. Click on the **Changes** tab: side-by-side full-width source diff showing line-by-line additions and removals.
+-  2. Expand **Run details & evidence** below the results: shows final rule score (**100 / 100**), request timing, provenance (`MOCK_SIMULATED`), and click **"Download run evidence"**.
+-  3. Brief terminal view: execute `node --import tsx --test src/tests/patch-structure.test.ts` to visually demonstrate the AST structural guard immediately rejecting blank proposals and exported function removals while preserving original source.
+-- **Presenter Voiceover (EN)**:
+-  > *"The orchestrator rechecks the configured rules and TypeScript diagnostics, and rejects patches that lower the rule score. An AST structural guard checks candidates before acceptance: blank code or patches that remove exported functions are rejected, preserving the original source code. Incomplete repairs yield PARTIAL with review required, preventing unearned SUCCESS claims. Runtime behavior and business contracts remain NOT_VERIFIED: proposed code is not executed in the application. Changes shows the full source comparison. Expand Run details and evidence to see the request duration, actual rule score and simulated provenance. 'Download run evidence' exports the session as JSON for review."*
+-
+----
+-
+-### 🎬 Scene 5: Recorded Live Nebius Proof (2:00 – 2:25)
+-- **On Screen**: Open `docs/live-proof-20261028/VIDEO_PROOF_EN.md`, then the saved `LIVE_NEBIUS_PROBE.json` and `REPAIRED_PAYMENT_WEBHOOK.txt`. Show the actual model, request ID and returned environment-variable repair. These are local saved files; opening them sends no new request.
+-- **Presenter Voiceover (EN)**:
+-  > *"Separately, this saved result documents our actual Nemotron Super call on Nebius. The model replaced the demonstration credential with an environment-variable reference. The repair passed static rules, TypeScript and fixture-structure checks. The provider returned a request ID and token usage. We are showing that recorded result without making another paid call."*
+-
+----
+-
+-### 🎬 Scene 6: Conclusion (2:25 – 2:40)
+-- **On Screen**: Return to the workspace and show the test summary: 96 automated tests and 30 browser checks. Keep account and private configuration pages outside the recording.
+-- **Presenter Voiceover (EN)**:
+-  > *"CodeSentinel combines repair proposals, deterministic checks, AST structural guards and recorded provenance. The project includes setup instructions, judge testing guide, and an MIT license. Runtime behavior still needs separate testing. Thank you to Nebius and NVIDIA."*
+-
+----
+-
+-## 🎙️ Recording Best Practices
+-- **Resolution**: 1920 × 1080 (1080p) at 60 FPS.
+-- **Audio**: Clean microphone without room echo.
+-- **Timing**: Maintain a brisk, confident delivery to keep total runtime around 2:40.
++Cuts, holds and crops follow the narration. The video is not a performance benchmark. The YouTube URL is still a separate publication step, tracked in `SUBMISSION_DEVPOST.md`.
+--- a/GUIDE_VIDEO_FR.md
++++ b/GUIDE_VIDEO_FR.md
+@@ -1,4 +1,6 @@
+ # Guide de préparation et de tournage — CodeSentinel
++
++> **Mise à jour du 29 octobre :** les trois prises et le montage sont terminés. La vidéo actuelle dure **1 min 50**, avec la voix anglaise et les sous-titres intégrés : [ouvrir le MP4](deliverables/video-20261029/CodeSentinel_EN_1080p.mp4). Le [script final](DEMO_VIDEO_SCRIPT.md) et la [narration exacte](deliverables/video-20261029/NARRATION_EN.txt) décrivent le montage livré. Les étapes ci-dessous conservent le guide de préparation utilisé avant le tournage ; le découpage de 2 min 40 n’est plus le montage final.
+ 
+ Nous passons maintenant à la répétition du parcours et à l’enregistrement de la vidéo. La finition locale et une réparation contrôlée réelle sont vérifiées. Aucun nouvel appel payant n’est nécessaire pour répéter les clics ou montrer les fichiers de preuve enregistrés.
+ 
+--- a/SUBMISSION_DEVPOST.md
++++ b/SUBMISSION_DEVPOST.md
+@@ -106,7 +106,7 @@
+ - **Frontend Cockpit Studio**: Next.js 15 (App Router), React 19, Tailwind CSS, Lucide React icons. Accessible dark-theme UI with keyboard navigation and line-by-line diff comparison.
+ - **Rule Engine & AST Analyzer**: Deterministic rule analysis inspired by `n8n_code_analyzer.py` and GitLab Duo Sentinel, augmented with TypeScript AST checks for Human-in-the-Loop conditional guards (`GOV-001`).
+ - **Structural Patch Guard**: TypeScript Compiler API AST checker (`checkPatchStructure`) ensuring exports, signatures, and code statements are never wiped out.
+-- **Testing Suite**: 96 unit and integration tests running with Node.js built-in test runner; 30 headless Chrome browser checks via Puppeteer.
++- **Testing Suite**: 98 unit and integration tests running with Node.js built-in test runner; 30 headless Chrome browser checks via Puppeteer.
+ - **Security Quarantine**: Untrusted model-generated code is never executed in the host application process (`NOT_VERIFIED`).
+ 
+ ---

@@ -1,0 +1,81 @@
+# 🎬 Video Demonstration Script (Duration: ~2 min 40 sec)
+
+> **Project**: Nebius CodeSentinel\
+> **Hackathon**: Nebius x NVIDIA Global AI Hackathon (Track: *Coding and Agentic Engineering*)\
+> **Target Audience**: Official Nebius and NVIDIA Jury Members\
+> **Format**: Screen recording and voiceover. UI rehearsal is simulated; the separate live proof is a saved response from the actual Nebius call. No API call is needed while recording.
+
+---
+
+## ⏱️ Video Timeline Overview
+
+```mermaid
+flowchart LR
+    S1["0:00 - 0:20<br>The Problem"] --> S2["0:20 - 0:40<br>The Workspace"]
+    S2 --> S3["0:40 - 1:20<br>Audit & Simulated Repair"]
+    S3 --> S4["1:20 - 2:00<br>Changes & Evidence"]
+    S4 --> S5["2:00 - 2:25<br>Recorded Live Nebius Proof"]
+    S5 --> S6["2:25 - 2:40<br>Conclusion"]
+```
+
+---
+
+### 🎬 Scene 1: The Problem (0:00 – 0:20)
+- **On Screen**: Split view showing a sample webhook handler with a fictitious hardcoded credential and an unguarded communication dispatch.
+- **Presenter Voiceover (EN)**:
+  > *"Automation scripts can leak hardcoded credentials, send notifications without approval, or fail because of an incorrect expression. CodeSentinel helps developers find these configured issues, inspect a repair proposal and keep a record of the checks."*
+
+---
+
+### 🎬 Scene 2: Introducing CodeSentinel (0:20 – 0:40)
+- **On Screen**: Transition to the **CodeSentinel Workspace** (`localhost:3005`). Clean dark workbench interface with the wide source editor, compact example selector and one primary **Analyze code** action.
+- **Presenter Voiceover (EN)**:
+  > *"Choose an example or paste your own code, then start with Analyze code. Results appear after analysis, and Repair source proposes changes you can review. This interface demonstration uses deterministic simulation, labelled MOCK_SIMULATED, to keep rehearsals free. We will also show the recorded evidence from an actual NVIDIA Nemotron repair on Nebius Token Factory."*
+
+---
+
+### 🎬 Scene 3: Audit and Simulated Repair (0:40 – 1:20)
+- **On Screen**:
+  1. Click **"Analyze code"** on `payment_webhook.ts`. The **Findings** panel surfaces the configured rule violations:
+     - 🔴 `SEC-001` (Line 4): Plaintext credential detected (`STRIPE_SECRET`).
+     - 🟡 `SYN-001` (Line 8): Missing leading `$` in `$json` expression (`json.customer.email`).
+     - 🟠 `GOV-001` (Line 11): Unguarded direct communication dispatch without HITL gatekeeper (`dispatchSlackAlert`).
+     - Initial compliance score: **45 / 100 [FAIL]**.
+  2. Click **"Repair source"**. The self-healing loop triggers.
+  3. The **Repair** tab displays the execution trace:
+     - Step 1: Invariant detection.
+     - Step 2: Simulated repair trace, labelled `MOCK_SIMULATED`.
+     - Step 3: Proposed patch and static verification results.
+- **Presenter Voiceover (EN)**:
+  > *"Clicking 'Analyze code' detects three configured rule violations, scoring this sample at 45 out of 100. We click 'Repair source'. This run uses deterministic simulation, labelled MOCK_SIMULATED. Its trace illustrates the proposed repair: moving the credential to an environment variable, adding a human approval gate before the Slack dispatch, and correcting the dollar-json expression."*
+
+---
+
+### 🎬 Scene 4: Changes and Evidence (1:20 – 2:00)
+- **On Screen**:
+  1. Click on the **Changes** tab: side-by-side full-width source diff showing line-by-line additions and removals.
+  2. Expand **Run details & evidence** below the results: shows final rule score (**100 / 100**), request timing, provenance (`MOCK_SIMULATED`), and click **"Download run evidence"**.
+  3. Brief terminal view: execute `node --import tsx --test src/tests/patch-structure.test.ts` to visually demonstrate the AST structural guard immediately rejecting blank proposals and exported function removals while preserving original source.
+- **Presenter Voiceover (EN)**:
+  > *"The orchestrator rechecks the configured rules and TypeScript diagnostics, and rejects patches that lower the rule score. An AST structural guard checks candidates before acceptance: blank code or patches that remove exported functions are rejected, preserving the original source code. Incomplete repairs yield PARTIAL with review required, preventing unearned SUCCESS claims. Runtime behavior and business contracts remain NOT_VERIFIED: proposed code is not executed in the application. Changes shows the full source comparison. Expand Run details and evidence to see the request duration, actual rule score and simulated provenance. 'Download run evidence' exports the session as JSON for review."*
+
+---
+
+### 🎬 Scene 5: Recorded Live Nebius Proof (2:00 – 2:25)
+- **On Screen**: Open `docs/live-proof-20261028/VIDEO_PROOF_EN.md`, then the saved `LIVE_NEBIUS_PROBE.json` and `REPAIRED_PAYMENT_WEBHOOK.txt`. Show the actual model, request ID and returned environment-variable repair. These are local saved files; opening them sends no new request.
+- **Presenter Voiceover (EN)**:
+  > *"Separately, this saved result documents our actual Nemotron Super call on Nebius. The model replaced the demonstration credential with an environment-variable reference. The repair passed static rules, TypeScript and fixture-structure checks. The provider returned a request ID and token usage. We are showing that recorded result without making another paid call."*
+
+---
+
+### 🎬 Scene 6: Conclusion (2:25 – 2:40)
+- **On Screen**: Return to the workspace and show the test summary: 96 automated tests and 30 browser checks. Keep account and private configuration pages outside the recording.
+- **Presenter Voiceover (EN)**:
+  > *"CodeSentinel combines repair proposals, deterministic checks, AST structural guards and recorded provenance. The project includes setup instructions, judge testing guide, and an MIT license. Runtime behavior still needs separate testing. Thank you to Nebius and NVIDIA."*
+
+---
+
+## 🎙️ Recording Best Practices
+- **Resolution**: 1920 × 1080 (1080p) at 60 FPS.
+- **Audio**: Clean microphone without room echo.
+- **Timing**: Maintain a brisk, confident delivery to keep total runtime around 2:40.

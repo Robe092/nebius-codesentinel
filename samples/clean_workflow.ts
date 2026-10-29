@@ -1,6 +1,6 @@
-// Sample Compliant Production Workflow for Nebius CodeSentinel
+// Sample workflow for CodeSentinel's static and TypeScript fixture environment.
+// The host must provide approval, input and notifier implementations at runtime.
 import { dispatchSlackAlert } from "./notifier";
-import { hitlGatekeeper } from "./guardrails";
 
 // Invariant Compliant: Environment variable
 const STRIPE_SECRET = process.env.STRIPE_SECRET || "";
@@ -12,7 +12,7 @@ export async function handlePayment(event: any) {
 
   if (amount > 10000) {
     // Invariant Compliant: Guarded by Human-in-the-Loop gatekeeper
-    if (await hitlGatekeeper.approve({ amount, customerEmail })) {
+    if (await verifyHumanApproval(event)) {
       await dispatchSlackAlert({
         channel: "#high-value-transactions",
         text: "Approved high payment: " + amount,

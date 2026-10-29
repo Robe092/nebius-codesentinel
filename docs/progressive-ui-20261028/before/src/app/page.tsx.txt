@@ -1,0 +1,213 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { ArrowDownToLine, ArrowRight, Check, CheckCircle2, ChevronRight, CircleHelp, Cpu, FileCode2, GitCompareArrows, LoaderCircle, Play, RotateCcw, ShieldCheck, ShieldAlert, Sparkles, Square, TriangleAlert, X } from "lucide-react";
+import { AuditReportSchema, SelfHealingSessionSchema, type AuditReport, type SelfHealingSession } from "@/types";
+import { WORKSPACE_SAMPLES } from "@/lib/workspace-samples";
+import { CodePane } from "@/components/code-pane";
+import { ResultPanel, ResultTabs, type ResultTab, type RunTiming } from "@/components/result-views";
+
+interface Health {
+  connected: boolean;
+  configured?: boolean;
+  model: string;
+  mode: "LIVE_NEBIUS" | "MOCK_SIMULATED";
+  latencyMs: number;
+  message?: string;
+}
+
+export default function CockpitStudio() {
+  const [sampleIndex, setSampleIndex] = useState(0);
+  const [code, setCode] = useState(WORKSPACE_SAMPLES[0].code);
+  const [filename, setFilename] = useState(WORKSPACE_SAMPLES[0].filename);
+  const [edited, setEdited] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [health, setHealth] = useState<Health | null>(null);
+  const [healthFailed, setHealthFailed] = useState(false);
+  const [report, setReport] = useState<AuditReport | null>(null);
+  const [initialReport, setInitialReport] = useState<AuditReport | null>(null);
+  const [session, setSession] = useState<SelfHealingSession | null>(null);
+  const [activeTab, setActiveTab] = useState<ResultTab>("audit");
+  const [busy, setBusy] = useState<"audit" | "healing" | null>(null);
+  const [error, setError] = useState<{ message: string; operation?: "audit" | "healing" } | null>(null);
+  const [timings, setTimings] = useState<RunTiming>({});
+  const [focusLine, setFocusLine] = useState<{ line: number; key: number } | null>(null);
+  const [demoStep, setDemoStep] = useState<number | null>(null);
+  const [notice, setNotice] = useState("");
+  const requestController = useRef<AbortController | null>(null);
+  const demoActive = useRef(false);
+  const demoGeneration = useRef(0);
+  const operationActive = useRef(false);
+  const copyTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/nebius/health", { signal: controller.signal })
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok || !payload.success || !["MOCK_SIMULATED", "LIVE_NEBIUS"].includes(payload.data?.mode) || typeof payload.data.connected !== "boolean") throw new Error("Health unavailable");
+        setHealth(payload.data);
+      })
+      .catch((reason) => { if (reason.name !== "AbortError") setHealthFailed(true); });
+    return () => {
+      controller.abort(); demoActive.current = false; requestController.current?.abort();
+      if (copyTimeout.current) clearTimeout(copyTimeout.current);
+    };
+  }, []);
+
+  const invalidateResults = () => {
+    requestController.current?.abort();
+    setReport(null); setInitialReport(null); setSession(null); setTimings({});
+    setError(null); setFocusLine(null); setActiveTab("audit"); setNotice(""); setCopied(false);
+  };
+
+  const selectSample = (index: number) => {
+    if (operationActive.current || demoActive.current) return;
+    invalidateResults(); setSampleIndex(index); setCode(WORKSPACE_SAMPLES[index].code);
+    setFilename(WORKSPACE_SAMPLES[index].filename); setEdited(false);
+  };
+
+  const editCode = (value: string) => {
+    if (operationActive.current || demoActive.current) return;
+    invalidateResults(); setCode(value); setEdited(value !== WORKSPACE_SAMPLES[sampleIndex].code);
+  };
+
+  const runOperation = async (operation: "audit" | "healing", source = code, target = filename, controller = new AbortController()) => {
+    if (operationActive.current || !source.trim()) return null;
+    operationActive.current = true; requestController.current = controller;
+    setBusy(operation); setError(null); setNotice(""); setActiveTab(operation);
+    if (operation === "audit") { setReport(null); setInitialReport(null); setSession(null); setTimings({}); }
+    else { setSession(null); setReport(initialReport); setTimings((previous) => ({ auditMs: previous.auditMs })); }
+    const start = performance.now();
+    try {
+      const response = await fetch(operation === "audit" ? "/api/analyze" : "/api/heal", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: source, filename: target }), signal: controller.signal,
+      });
+      const payload = await response.json();
+      if (controller.signal.aborted) return null;
+      if (!response.ok || !payload.success) throw new Error(payload.error || `Request failed (${response.status}). Try again.`);
+      const elapsed = Math.round(performance.now() - start);
+      if (operation === "audit") {
+        const parsed = AuditReportSchema.safeParse(payload.data);
+        if (!parsed.success) throw new Error("The service returned an incomplete audit report. Try the request again.");
+        const audit = parsed.data;
+        setReport(audit); setInitialReport(audit); setTimings({ auditMs: elapsed });
+        return audit;
+      }
+      const parsed = SelfHealingSessionSchema.safeParse(payload.data);
+      if (!parsed.success) throw new Error("The service returned an incomplete repair record. Try the request again.");
+      const healed = parsed.data;
+      setSession(healed);
+      setInitialReport((previous) => previous ?? healed.steps[0]?.auditReport ?? null);
+      setReport(healed.finalReport ?? null);
+      setTimings((previous) => ({ ...previous, repairMs: elapsed }));
+      return healed;
+    } catch (reason) {
+      if (!controller.signal.aborted) {
+        const message = reason instanceof SyntaxError ? "The service returned an unreadable response. Try the request again." : reason instanceof Error ? reason.message : "The request could not be completed. Try again.";
+        setError({ message, operation });
+      }
+      return null;
+    } finally {
+      if (requestController.current === controller) { operationActive.current = false; setBusy(null); }
+    }
+  };
+
+  const stopDemo = () => {
+    demoGeneration.current++;
+    demoActive.current = false; requestController.current?.abort();
+    setDemoStep(null); setBusy(null); operationActive.current = false;
+    setNotice("Guided demo stopped. Any server work already started may still finish; its response will be ignored.");
+  };
+
+  const startDemo = async () => {
+    if (operationActive.current || demoActive.current) return;
+    invalidateResults();
+    const sample = WORKSPACE_SAMPLES[0];
+    setSampleIndex(0); setCode(sample.code); setFilename(sample.filename); setEdited(false);
+    demoActive.current = true; setDemoStep(0);
+    const generation = ++demoGeneration.current;
+    const controller = new AbortController();
+    const audit = await runOperation("audit", sample.code, sample.filename, controller);
+    if (generation !== demoGeneration.current) return;
+    if (!audit || !demoActive.current) { demoActive.current = false; setDemoStep(null); return; }
+    setDemoStep(1);
+    const healing = await runOperation("healing", sample.code, sample.filename, controller);
+    if (generation !== demoGeneration.current) return;
+    if (!demoActive.current) return;
+    demoActive.current = false; setDemoStep(null);
+    if (healing && "status" in healing && healing.status === "SUCCESS") {
+      setActiveTab("diff"); setNotice("Guided demo complete. Compare the source changes, then open Evidence for the run record.");
+    }
+  };
+
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true); setNotice("Source code copied.");
+      if (copyTimeout.current) clearTimeout(copyTimeout.current);
+      copyTimeout.current = setTimeout(() => setCopied(false), 2000);
+    } catch { setError({ message: "Clipboard access is unavailable. Select and copy the source directly in the editor." }); }
+  };
+
+  const exportEvidence = () => {
+    const body = JSON.stringify({ exportedAt: new Date().toISOString(), filename, source: code, audit: initialReport ?? report, repair: session, requestTimings: timings, measurementScope: "Browser request round trips; not model inference benchmarks.", verificationScope: "Configured static rules plus in-memory TypeScript semantic checks; host runtime execution NOT_VERIFIED." }, null, 2);
+    const url = URL.createObjectURL(new Blob([body], { type: "application/json" }));
+    const anchor = document.createElement("a");
+    anchor.href = url; anchor.download = `${filename.replace(/\.[^.]+$/, "")}-evidence.json`;
+    anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setNotice("Run evidence downloaded. Review the included source code before sharing.");
+  };
+
+  const locked = busy !== null || demoStep !== null;
+  const patchExists = !!session?.steps.some((step) => step.patch);
+  const phase = session ? 3 : busy === "healing" ? 1 : report ? 1 : 0;
+  const mode = health?.mode;
+  const connectionLabel = healthFailed ? "Connection unknown" : !health ? "Checking connection…" : mode === "MOCK_SIMULATED" ? "Simulation mode" : "Configured — connection not verified";
+
+  return <div className="app-shell">
+    <a className="skip-link" href="#workspace">Skip to workspace</a>
+    <header className="app-header">
+      <a className="brand" href="/" aria-label="Nebius CodeSentinel home"><span className="brand-mark"><ShieldCheck size={23} strokeWidth={1.7} /></span><span><strong>CodeSentinel<span className="brand-period">.</span></strong><small>Nebius × NVIDIA</small></span></a>
+      <div className="header-divider" /><span className="workspace-label">Code review workspace</span>
+      <div className="header-actions"><span className={`connection-status ${mode === "MOCK_SIMULATED" ? "simulation" : health?.configured ? "configured" : "unknown"}`} title={health?.message}><i />{connectionLabel}</span><button id="btn-autopilot" className="button button-secondary demo-button" onClick={demoStep !== null ? stopDemo : startDemo} disabled={!!busy && demoStep === null}>{demoStep !== null ? <Square size={14} /> : <Play size={14} />}<span>{demoStep !== null ? "Stop demo" : "Guided demo"}</span></button></div>
+    </header>
+
+    <main className="workspace-main" id="workspace">
+      <span className="sr-only" role="status" aria-live="polite">{busy ? busy === "audit" ? "Audit in progress." : "Repair in progress." : session ? `Repair result: ${session.status}. Rule score: ${session.finalReport?.score ?? "not returned"}.` : report ? `Audit complete. ${report.issues.length} issues found. Rule score: ${report.score} out of 100.` : ""}</span>
+      <div className="workspace-intro"><div><h1>Inspect. Repair. Verify.</h1><p>A closer look at risky code. A repair you can review.</p></div><div className="intro-caption"><ShieldCheck size={17} /><span>Human review stays in the loop.</span></div></div>
+      <div className="workspace-layout">
+        <aside className="scenario-rail" aria-label="Workspace scenarios">
+          <div className="scenario-heading"><h2>Try a scenario</h2><span>3 samples</span></div>
+          <div className="scenario-options">{WORKSPACE_SAMPLES.map((sample, index) => <button key={sample.filename} className={`scenario-option ${sampleIndex === index ? "is-selected" : ""}`} aria-pressed={sampleIndex === index} disabled={locked} onClick={() => selectSample(index)}><span className={`scenario-icon scenario-icon-${index}`}>{index === 0 ? <ShieldAlert size={18} /> : index === 1 ? <FileCode2 size={18} /> : <ShieldCheck size={18} />}</span><span className="scenario-copy"><strong>{sample.title}</strong><small>{sample.description}</small></span>{sampleIndex === index && <ChevronRight size={14} className="scenario-chevron" />}</button>)}</div>
+          <div className="rail-help"><CircleHelp size={16} /><p>Working on your own code? Paste it directly into the editor.</p></div>
+          <details className="how-it-works"><summary>How it works<ChevronRight size={15} /></summary><p>Static rules find risky patterns. A repair proposes changes, then the same rules check the returned source.</p><p>In live mode, a repair sends the source to the configured model. In simulation, deterministic examples run locally.</p><p>Review and test every proposal in its intended environment.</p></details>
+          <div className="sponsor-note"><Cpu size={20} /><div><strong>NVIDIA Nemotron</strong><span>via Nebius Token Factory</span></div></div>
+        </aside>
+
+        <div className="workbench">
+          <ol className="workflow-steps" aria-label="Review progress">{[
+            { title: "Detect", detail: report || initialReport ? "Source inspected" : "Inspect the source", done: !!initialReport || !!report },
+            { title: "Repair", detail: busy === "healing" ? "Preparing a proposal" : session ? patchExists ? "Proposal returned" : "No patch needed" : "Propose a change", done: !!session },
+            { title: "Verify", detail: session ? session.status === "SUCCESS" ? "Review the evidence" : session.status === "PARTIAL" ? "Partial: review required" : "Review required" : "Review the evidence", done: session?.status === "SUCCESS" },
+          ].map((step, index) => <li key={step.title} className={`${step.done ? "is-done" : ""} ${phase === index || phase === 3 && index === 2 ? "is-current" : ""}`} aria-current={phase === index || phase === 3 && index === 2 ? "step" : undefined}><span className="step-number">{step.done ? <Check size={14} /> : index + 1}</span><span><strong>{step.title}</strong><small>{step.detail}</small></span>{index < 2 && <ChevronRight size={15} className="step-chevron" />}</li>)}</ol>
+
+          {error && <div role="alert" className="error-banner"><TriangleAlert size={18} /><div><strong>That request could not be completed.</strong><p>{error.message}</p></div>{error.operation && <button className="text-button" onClick={() => runOperation(error.operation!)} disabled={locked}>Try again<RotateCcw size={14} /></button>}<button className="icon-button" aria-label="Dismiss error" onClick={() => setError(null)}><X size={16} /></button></div>}
+          {demoStep !== null && <div className="demo-banner" role="status"><LoaderCircle size={16} className="is-spinning" /><span>{demoStep === 0 ? "Guided demo: inspecting the payment webhook." : "Guided demo: proposing a repair and checking the returned source."}</span><span>{demoStep + 1} / 2</span></div>}
+
+          <div className={`workspace-panels ${activeTab === "diff" && session ? "is-comparing" : ""}`}>
+            <div className="source-column"><div className="section-heading"><h2>{session ? "Original source" : "Source"}</h2><span>{edited ? "Modified source" : "Sample workflow"}</span></div>
+              <CodePane code={code} filename={filename} disabled={locked} issues={session ? initialReport?.issues ?? [] : report?.issues ?? []} focusLine={focusLine} copied={copied} onChange={editCode} onCopy={copyCode} onReset={() => selectSample(sampleIndex)} />
+              <div className="source-actions"><button id="btn-static-audit" className="button button-secondary" onClick={() => runOperation("audit")} disabled={locked || !code.trim()}>{busy === "audit" ? <LoaderCircle size={16} className="is-spinning" /> : <ShieldCheck size={16} />}<span>{busy === "audit" ? "Inspecting…" : "Run audit"}</span></button><button id="btn-healing-loop" className="button button-primary" onClick={() => runOperation("healing")} disabled={locked || !code.trim()}>{busy === "healing" ? <LoaderCircle size={16} className="is-spinning" /> : <Sparkles size={16} />}<span>{busy === "healing" ? "Repairing…" : "Repair source"}</span>{!busy && <ArrowRight size={15} />}</button></div>
+              <p className="source-safety"><ShieldCheck size={13} />Your source is inspected, never executed.</p>
+            </div>
+            <div className="results-column"><div className="section-heading"><h2>Review</h2>{(report || session) && <button className="export-link" onClick={exportEvidence}><ArrowDownToLine size={14} />Export evidence</button>}</div><div className="results-shell"><ResultTabs active={activeTab} onChange={setActiveTab} report={session ? initialReport : report} session={session} /><ResultPanel active={activeTab} report={report} initialReport={initialReport} session={session} busy={busy} timings={timings} onAudit={() => runOperation("audit")} onRepair={() => runOperation("healing")} onIssue={(issue) => setFocusLine({ line: issue.line ?? 1, key: Date.now() })} onTab={setActiveTab} onExport={exportEvidence} /></div></div>
+          </div>
+        </div>
+      </div>
+      <footer className="workspace-footer"><span>Nebius CodeSentinel<span className="footer-separator" />Coding & agentic engineering</span><span className="runtime-label">{health ? <><i />{health.mode}<span className="footer-separator" /><code>{health.model}</code></> : <><i />{healthFailed ? "CONNECTION_NOT_VERIFIED" : "CHECKING_CONNECTION"}</>}</span></footer>
+      <div className={`notice ${notice ? "is-visible" : ""}`} role="status" aria-live="polite">{notice && <><CheckCircle2 size={16} /><span>{notice}</span><button className="icon-button" onClick={() => setNotice("")} aria-label="Dismiss notification"><X size={14} /></button></>}</div>
+    </main>
+  </div>;
+}

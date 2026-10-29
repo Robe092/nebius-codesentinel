@@ -1,0 +1,5 @@
+CLEAN_SAMPLE_SEMANTIC {"passed":false,"error":"TS2792: Cannot find module './guardrails'. Did you mean to set the 'moduleResolution' option to 'nodenext', or to add aliases to the 'paths' option?"}
+CLEAN_SAMPLE_STATIC_SCORE 100
+CLEAN_COPY_WITH_GENERATED_DECLARATION {"exit":0,"output":""}
+CLEAN_COPY_WITH_PORTABLE_DECLARATION {"exit":0,"output":""}
+TEMP_COPY /var/folders/yd/jnmkl3hx76g7c8lc1_jc8bbw0000gn/T/codesentinel-clean-typecheck-cmuEkt

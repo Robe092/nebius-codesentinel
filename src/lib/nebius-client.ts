@@ -7,9 +7,10 @@ import {
   PromptPayload,
   PatchProposalSchema,
 } from "@/types";
+import { executeBoundedInference, BoundedInferenceBudget } from "./bounded-inference";
 
 export class NebiusClient {
-  private openai: OpenAI | null = null;
+  public openai: OpenAI | null = null;
   private baseURL: string;
   private apiKey: string;
   private model: string;
@@ -20,27 +21,31 @@ export class NebiusClient {
     this.baseURL =
       config?.baseURL ||
       process.env.NEBIUS_BASE_URL ||
-      "https://api.studio.nebius.ai/v1/";
+      "https://api.tokenfactory.nebius.com/v1/";
     this.apiKey = config?.apiKey || process.env.NEBIUS_API_KEY || "";
     this.model =
       config?.model ||
       process.env.NEBIUS_MODEL ||
-      "nvidia/nemotron-3-super-120b";
+      "nvidia/nemotron-3-super-120b-a12b";
     this.fallbackModel =
       config?.fallbackModel ||
       process.env.NEBIUS_FALLBACK_MODEL ||
-      "meta-llama/Meta-Llama-3.1-70B-Instruct";
+      "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B";
 
-    // Auto-detect mock mode if no API key is supplied
+    // Auto-detect mock mode: default to simulation unless live repair is explicitly enabled with a valid key
     this.mockMode =
       config?.mockMode ??
-      (process.env.MOCK_MODE === "true" || !this.apiKey || this.apiKey.trim() === "");
+      (process.env.MOCK_MODE !== "false" ||
+        process.env.ENABLE_LIVE_REPAIR !== "true" ||
+        !this.apiKey ||
+        this.apiKey.trim() === "");
 
     if (!this.mockMode && this.apiKey) {
       this.openai = new OpenAI({
         baseURL: this.baseURL,
         apiKey: this.apiKey,
-        timeout: 45000,
+        timeout: 30000,
+        maxRetries: 0,
       });
     }
   }
@@ -58,96 +63,45 @@ export class NebiusClient {
   }
 
   /**
-   * Health check to test Nebius Token Factory connectivity
+   * Health check to test Nebius Token Factory configuration.
+   * Reports configuration status without consuming tokens or initiating inference.
    */
   public async testConnection(): Promise<{
     connected: boolean;
+    configured: boolean;
     model: string;
     mode: "LIVE_NEBIUS" | "MOCK_SIMULATED";
     latencyMs: number;
     message?: string;
   }> {
-    const startTime = Date.now();
-
     if (this.mockMode || !this.openai) {
       return {
-        connected: true,
+        connected: false,
+        configured: true,
         model: this.model,
         mode: "MOCK_SIMULATED",
-        latencyMs: 12,
-        message: "Simulation mode active. Ready for zero-credit testing.",
+        latencyMs: 0,
+        message: "Simulation mode active. Ready for offline testing.",
       };
     }
 
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: this.model,
-        messages: [
-          {
-            role: "system",
-            content: "You are the Nebius NVIDIA Nemotron CodeSentinel connectivity probe.",
-          },
-          {
-            role: "user",
-            content: "Respond with the word PONG if live.",
-          },
-        ],
-        max_tokens: 10,
-        temperature: 0.1,
-      });
-
-      const reply = response.choices[0]?.message?.content?.trim() || "";
-      const latencyMs = Date.now() - startTime;
-
-      return {
-        connected: true,
-        model: this.model,
-        mode: "LIVE_NEBIUS",
-        latencyMs,
-        message: `Successfully connected to Nebius Token Factory. Response: ${reply}`,
-      };
-    } catch (err: any) {
-      // If primary model failed, test fallback model before failing
-      try {
-        const fallbackRes = await this.openai.chat.completions.create({
-          model: this.fallbackModel,
-          messages: [
-            {
-              role: "system",
-              content: "Nebius connectivity fallback probe.",
-            },
-            {
-              role: "user",
-              content: "PING",
-            },
-          ],
-          max_tokens: 10,
-        });
-
-        const latencyMs = Date.now() - startTime;
-        return {
-          connected: true,
-          model: `${this.fallbackModel} (fallback)`,
-          mode: "LIVE_NEBIUS",
-          latencyMs,
-          message: `Primary model unavailable, fallback operational: ${fallbackRes.choices[0]?.message?.content}`,
-        };
-      } catch (fallbackErr: any) {
-        return {
-          connected: false,
-          model: this.model,
-          mode: "LIVE_NEBIUS",
-          latencyMs: Date.now() - startTime,
-          message: `Connection failed: ${err.message || String(err)}`,
-        };
-      }
-    }
+    return {
+      connected: false,
+      configured: true,
+      model: this.model,
+      mode: "LIVE_NEBIUS",
+      latencyMs: 0,
+      message: "Configured — connection not verified (zero inference tokens consumed).",
+    };
   }
 
   /**
    * Generates a code patch using NVIDIA Nemotron on Nebius Token Factory
    */
-  public async generatePatch(payload: PromptPayload): Promise<PatchProposal> {
+  public async generatePatch(
+    payload: PromptPayload,
+    options?: { budget?: BoundedInferenceBudget }
+  ): Promise<PatchProposal> {
     const startTime = Date.now();
 
     if (this.mockMode || !this.openai) {
@@ -160,7 +114,12 @@ Your mission:
 2. Formulate step-by-step reasoning explaining why each issue occurred and how to resolve it safely.
 3. Preserve all non-impacted business logic, comments, and contracts (Anti-Regression).
 4. Provide the exact unified diff and the complete, pristine repaired code.
-5. Format your output strictly as a JSON object with this exact structure:
+5. Use the existing fixture environment when repairing automation examples:
+   - verifyHumanApproval(event?: any): Promise<boolean> is an available global approval helper. Await it in a conditional before dispatching an external notification.
+   - $json: any is the available automation input; process.env exposes environment variables as string | undefined.
+   - The existing ./notifier module exports dispatchSlackAlert(opts: any): Promise<any>.
+   Preserve helpers already defined in the source. Do not invent new imports or undeclared helpers such as ./guardrails; the verifier cannot resolve arbitrary application modules. These declarations support typechecking only, not runtime execution.
+6. Format your output strictly as a JSON object with this exact structure:
 {
   "reasoningSteps": ["Step 1...", "Step 2..."],
   "explanation": "Executive summary of the fix",
@@ -188,43 +147,58 @@ Please adjust your approach to address these test failures directly.`
 
 Return ONLY the valid JSON object.`;
 
+    const budget: BoundedInferenceBudget = options?.budget || { maxRequests: 2, requestsUsed: 0 };
+    const result = await executeBoundedInference({
+      client: this.openai,
+      model: this.model,
+      fallbackModel: this.fallbackModel,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      maxTokens: 4000,
+      budget,
+      maxPayloadBytes: 8192,
+    });
+
+    let parsed: any;
     try {
-      const response = await this.openai.chat.completions.create({
-        model: this.model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.2, // Low temperature for deterministic code precision
-        response_format: { type: "json_object" },
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error("Empty response from Nebius NVIDIA model");
-      }
-
-      const parsed = JSON.parse(content);
-      return PatchProposalSchema.parse({
-        id: `patch-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        timestamp: new Date().toISOString(),
-        modelUsed: this.model,
-        reasoningSteps: parsed.reasoningSteps || [
-          "Analyzed AST and syntax anomalies",
-          "Removed security leak pattern and introduced environment guard",
-          "Applied deterministic regex fencing to prevent unhandled node execution",
-        ],
-        explanation: parsed.explanation || "Autonomous repair applied by NVIDIA Nemotron.",
-        diff: parsed.diff || "",
-        repairedCode: parsed.repairedCode || payload.code,
-        fixedIssueIds: parsed.fixedIssueIds || payload.issues.map((i) => i.id),
-        confidenceScore: parsed.confidenceScore ?? 0.95,
-        sourceMode: "LIVE_NEBIUS",
-      });
-    } catch (err: any) {
-      console.warn(`[NebiusClient] Live model query failed, falling back to mock generator: ${err.message}`);
-      return this.simulateNemotronPatch(payload);
+      parsed = JSON.parse(result.content);
+    } catch {
+      throw new Error(`Model response content is not valid JSON: ${result.content.slice(0, 80)}`);
     }
+
+    if (!parsed || typeof parsed.repairedCode !== "string") {
+      throw new Error("Missing 'repairedCode' in model patch proposal");
+    }
+
+    const reasoningSteps: string[] = Array.isArray(parsed.reasoningSteps) ? parsed.reasoningSteps : [];
+    const explanation: string = typeof parsed.explanation === "string" ? parsed.explanation : "";
+    const confidenceScore: number | undefined =
+      typeof parsed.confidenceScore === "number"
+        ? Math.min(Math.max(parsed.confidenceScore, 0), 1)
+        : undefined;
+
+    const modelUsed = result.model || "UNKNOWN";
+    const providerModelVerified = Boolean(result.model);
+    const requestedModel = result.requestedModel || this.model;
+
+    return PatchProposalSchema.parse({
+      id: `patch-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      timestamp: new Date().toISOString(),
+      modelUsed,
+      requestedModel,
+      providerModelVerified,
+      reasoningSteps,
+      explanation,
+      diff: typeof parsed.diff === "string" ? parsed.diff : "",
+      repairedCode: parsed.repairedCode,
+      fixedIssueIds: Array.isArray(parsed.fixedIssueIds) ? parsed.fixedIssueIds : payload.issues.map((i) => i.id),
+      confidenceScore,
+      sourceMode: "LIVE_NEBIUS",
+      providerResponseId: result.id,
+      tokenUsage: result.usage,
+    });
   }
 
   /**

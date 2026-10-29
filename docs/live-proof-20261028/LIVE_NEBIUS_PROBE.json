@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "testedAtUtc": "2026-10-28T13:06:23.715Z",
+  "endpoint": "https://api.tokenfactory.nebius.com/v1/",
+  "apiKeyConfigured": true,
+  "primaryAttempts": 1,
+  "fallbackAttempts": 0,
+  "totalAttempts": 1,
+  "retriesCount": 0,
+  "primaryModel": "nvidia/nemotron-3-super-120b-a12b",
+  "actualModelUsed": "nvidia/nemotron-3-super-120b-a12b",
+  "responseId": "chatcmpl-aa293e018d7955bb",
+  "latencyMs": 6683,
+  "tokensUsage": {
+    "promptTokens": 143,
+    "completionTokens": 736,
+    "totalTokens": 879
+  },
+  "repairVerified": true,
+  "details": "Controlled repair passed static rules, TypeScript and fixture structure checks. Runtime NOT_VERIFIED. Model: nvidia/nemotron-3-super-120b-a12b",
+  "rawResponseSnippet": "// Payment webhook invariant test fixture\nconst STRIPE_SECRET = process.env.API_CREDENTIAL;\nexport async function handle"
+}

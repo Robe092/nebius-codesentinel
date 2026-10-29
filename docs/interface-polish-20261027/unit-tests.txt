@@ -1,0 +1,39 @@
+npm notice run nebius-nvidia-agent@0.1.0 test
+npm notice run node --import tsx --test src/tests/**/*.test.ts
+✔ CodeAnalyzer handles empty and whitespace-only code cleanly (2.844125ms)
+✔ CodeAnalyzer flags deprecated components (eval, basicLLMChain) with HIGH severity (0.160708ms)
+✔ CodeAnalyzer flags empty expression placeholders '{{ }}' with LOW severity (0.074167ms)
+✔ CodeAnalyzer recognizes HITL guardrails in preceding lines and permits communication (0.089375ms)
+✔ SelfHealingOrchestrator exits immediately with SUCCESS when given already clean code (0.203458ms)
+✔ PatchProposalSchema strictly validates patch schema structure (1.036875ms)
+✔ API: GET /api/nebius/health returns connectivity data (6.691667ms)
+✔ API: GET /api/benchmark returns 5 comparative benchmarks (5.423417ms)
+✔ API: POST /api/analyze validates payload and returns audit report (1.649208ms)
+✔ API: POST /api/heal executes healing loop and returns session (1.427834ms)
+✔ CLI: prints help when invoked without arguments or with help flag (442.276083ms)
+✔ CLI: benchmark command prints comparative table (174.125459ms)
+✔ CLI: audit on clean workflow returns exit code 0 and 100/100 score (174.30575ms)
+✔ CLI: audit on vulnerable workflow returns exit code 1 with detailed violations (169.18425ms)
+✔ CLI: heal dry-run proposes patch and exits with code 0 without modifying file (178.97825ms)
+✔ CLI: heal with --apply overwrites file and fixes all violations (379.936125ms)
+✔ CLI: error handling for missing target file (532.477166ms)
+✔ CodeAnalyzer flags hardcoded secrets with CRITICAL severity (1.978917ms)
+✔ CodeAnalyzer flags un-guarded direct communication dispatches (0.149666ms)
+✔ CodeAnalyzer flags invalid n8n expression syntax (0.08125ms)
+✔ CodeAnalyzer reports 100% score for compliant code (0.0875ms)
+✔ NebiusClient initializes in mock simulation mode when no API key is provided (0.480791ms)
+✔ NebiusClient generates high-fidelity Nemotron patch proposal in mock mode (1.129959ms)
+✔ SelfHealingOrchestrator repairs vulnerable code within iterations (2.427958ms)
+✔ SelfHealingOrchestrator triggers circuit breaker if verifier continuously rejects patch (0.203917ms)
+✔ line comparison preserves context and identifies actual additions and removals (0.840042ms)
+✔ line comparison handles empty sources and unchanged trailing newlines (0.110709ms)
+✔ line comparison bounds work on large sources while retaining all lines (2.80125ms)
+✔ session evidence uses actual score and all patch provenance, including fallback (0.170833ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2210.834958

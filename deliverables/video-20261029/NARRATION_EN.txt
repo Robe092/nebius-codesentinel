@@ -1,0 +1,13 @@
+Automation scripts can expose credentials, send messages without approval, or fail because of incorrect expressions. For developers building these workflows, reviewing every change takes time.
+CodeSentinel helps them find configured risks, inspect a proposed repair, and review the evidence before using the result.
+Let’s start with this payment webhook. This interface demonstration uses simulation, clearly labelled on screen. We’ll show a separate, real NVIDIA response from Nebius afterwards.
+Clicking Analyze code reveals three findings: a hardcoded credential, a missing human approval gate, and an incorrect expression. The initial rule score is forty-five out of one hundred.
+Repair source proposes changes and rechecks the configured rules. In this simulated example, the score reaches one hundred.
+The comparison shows exactly what changed: the credential moves to an environment variable, the expression is corrected, and an approval check is added before sending the notification.
+That score reflects the configured checks. It does not prove that the application behaves correctly at runtime. CodeSentinel does not execute the proposed code.
+Repair proposals also face structural safeguards. These fourteen targeted tests cover cases including blank proposals, deleted exported functions, and changes to supported function signatures. Incomplete repairs must remain marked as partial.
+Now, here is our saved real response from NVIDIA Nemotron Super on Nebius Token Factory.
+The model replaced a fictitious demonstration credential with an environment variable. The returned repair passed static rules, TypeScript checks, and controlled fixture checks. The provider response identifier and token usage are recorded alongside the result.
+This is previously recorded evidence, separate from the simulated interface demonstration.
+CodeSentinel brings repair proposals, deterministic checks, and reviewable evidence into one workspace, while keeping the developer in control.
+

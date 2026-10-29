@@ -21,14 +21,15 @@ test("CLI: prints help when invoked without arguments or with help flag", async 
   assert.ok(help2.includes("Nebius CodeSentinel CLI"));
 });
 
-test("CLI: benchmark command prints comparative table", async () => {
+test("CLI: benchmark command prints architectural comparison without unsupported numbers", async () => {
   const { stdout } = await execFileAsync("node", ["--import", "tsx", "bin/cli.ts", "benchmark"], {
     cwd: PROJECT_ROOT,
   });
-  assert.ok(stdout.includes("Nebius Token Factory + NVIDIA Nemotron vs Baseline Benchmark"));
-  assert.ok(stdout.includes("840 ms"));
-  assert.ok(stdout.includes("4.1x Faster"));
-  assert.ok(stdout.includes("100.0%"));
+  assert.ok(stdout.includes("Nebius Token Factory + NVIDIA Nemotron"));
+  assert.equal(stdout.includes("4.1x"), false);
+  assert.equal(stdout.includes("8.3x"), false);
+  assert.equal(stdout.includes("100.0%"), false);
+  assert.ok(stdout.includes("unmeasured") || stdout.includes("Architectural"));
 });
 
 test("CLI: audit on clean workflow returns exit code 0 and 100/100 score", async () => {
@@ -128,5 +129,32 @@ test("CLI: error handling for missing target file", async () => {
   } catch (err: any) {
     assert.equal(err.code, 1);
     assert.ok(err.stderr.includes("File not found"));
+  }
+});
+
+test("CLI: heal with --apply does NOT overwrite file when outcome is not SUCCESS", async () => {
+  const tempPath = path.resolve("samples/temp_test_cli_fail.ts");
+  const invalidContent = `const secret = "sk-123456789012345678901234";\nexport function broken(): number {\n  return "not a number";\n}\n`;
+  fs.writeFileSync(tempPath, invalidContent, "utf-8");
+
+  try {
+    try {
+      await execFileAsync(
+        "node",
+        ["--import", "tsx", "bin/cli.ts", "heal", "samples/temp_test_cli_fail.ts", "--apply"],
+        { cwd: PROJECT_ROOT }
+      );
+      assert.fail("Should have exited with error code 1");
+    } catch (err: any) {
+      assert.equal(err.code, 1);
+    }
+
+    // Verify file content was NOT overwritten
+    const contentAfter = fs.readFileSync(tempPath, "utf-8");
+    assert.equal(contentAfter, invalidContent);
+  } finally {
+    if (fs.existsSync(tempPath)) {
+      fs.unlinkSync(tempPath);
+    }
   }
 });

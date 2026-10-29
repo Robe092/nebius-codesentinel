@@ -1,0 +1,17 @@
+PASS Initial workspace and explicit simulation provenance
+PASS Real audit response drives the visible findings and score
+PASS Finding navigation selects the actual source line
+PASS Repair trace shows the returned score and actual mode
+PASS Full-width comparison uses actual source lines rather than the simulated diff summary
+PASS Evidence contains measured request timings without invented comparison metrics
+PASS Downloaded JSON contains the source and the actual session record
+PASS Result tabs support keyboard navigation and selection
+PASS Clean source needs no model call and changing scenarios clears previous results
+PASS Empty source disables analysis and keeps repair unavailable
+PASS Audit layout at 390 × 844
+PASS Audit layout at 768 × 1024
+PASS Audit layout at 1024 × 768
+PASS Audit layout at 1920 × 1080
+PASS Guided demonstration waits for responses and opens the returned source comparison
+PASS No uncaught browser errors throughout the journey
+Verified 16 browser checks.

@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "authorizedAtUtc": "2026-10-28T13:06:23.713Z",
+  "authorization": "User explicitly approved the prepared repair test up to USD 0.05 and requested minimal expense.",
+  "authorizedBudgetUsd": 0.05,
+  "maxInferenceRequests": 2,
+  "maxOutputTokensPerRequest": 4000,
+  "automaticRetries": 0,
+  "fixtureSafety": "DEMO_ONLY non-credential placeholder; no private data in model messages",
+  "requests": [
+    {
+      "sequence": 1,
+      "requestedModel": "nvidia/nemotron-3-super-120b-a12b",
+      "startedAtUtc": "2026-10-28T13:06:23.715Z",
+      "maxOutputTokens": 4000,
+      "reservedMaximumUsdBeforeTax": 0.0051,
+      "durationMs": 6682,
+      "responseId": "chatcmpl-aa293e018d7955bb",
+      "actualModel": "nvidia/nemotron-3-super-120b-a12b",
+      "finishReason": "stop",
+      "usage": {
+        "completion_tokens": 736,
+        "prompt_tokens": 143,
+        "total_tokens": 879,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": null,
+          "audio_tokens": null,
+          "reasoning_tokens": 598,
+          "rejected_prediction_tokens": null
+        },
+        "prompt_tokens_details": {
+          "audio_tokens": null,
+          "cached_tokens": 0,
+          "created_cache_tokens": 0,
+          "multimodal_tokens": null
+        },
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 143
+      },
+      "estimatedUsdBeforeTax": 0.0007053
+    }
+  ],
+  "reservedMaximumInferenceUsdBeforeTax": 0.0051,
+  "estimatedInferenceUsdBeforeTax": 0.0007053,
+  "completedAtUtc": "2026-10-28T13:06:30.773Z",
+  "actualInferenceRequests": 1,
+  "runtimeExecution": "NOT_VERIFIED",
+  "uiRemainsInSimulation": true
+}

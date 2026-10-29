@@ -1,0 +1,472 @@
+[
+  {
+    "text": "Automation scripts can expose credentials,",
+    "lines": [
+      "Automation scripts can expose credentials,"
+    ],
+    "startMs": 600,
+    "endMs": 2750,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "send messages without approval,",
+    "lines": [
+      "send messages without approval,"
+    ],
+    "startMs": 3120,
+    "endMs": 4550,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "or fail because of incorrect expressions.",
+    "lines": [
+      "or fail because of incorrect expressions."
+    ],
+    "startMs": 4640,
+    "endMs": 6730,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "For developers building these workflows,",
+    "lines": [
+      "For developers building these workflows,"
+    ],
+    "startMs": 7260,
+    "endMs": 9090,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "reviewing every change takes time.",
+    "lines": [
+      "reviewing every change takes time."
+    ],
+    "startMs": 9520,
+    "endMs": 11190,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "CodeSentinel helps them find configured risks,",
+    "lines": [
+      "CodeSentinel helps them find configured risks,"
+    ],
+    "startMs": 11820,
+    "endMs": 13850,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "inspect a proposed repair,",
+    "lines": [
+      "inspect a proposed repair,"
+    ],
+    "startMs": 14240,
+    "endMs": 15280,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "and review the evidence before using the result.",
+    "lines": [
+      "and review the evidence before using the result."
+    ],
+    "startMs": 15280,
+    "endMs": 17490,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Let\u2019s start with this payment webhook.",
+    "lines": [
+      "Let\u2019s start with this payment webhook."
+    ],
+    "startMs": 18000,
+    "endMs": 19830,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "This interface demonstration uses simulation,",
+    "lines": [
+      "This interface demonstration uses simulation,"
+    ],
+    "startMs": 20440,
+    "endMs": 22530,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "clearly labelled on screen.",
+    "lines": [
+      "clearly labelled on screen."
+    ],
+    "startMs": 23180,
+    "endMs": 24150,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "We\u2019ll show a separate, real NVIDIA response",
+    "lines": [
+      "We\u2019ll show a separate, real NVIDIA response"
+    ],
+    "startMs": 24580,
+    "endMs": 26820,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "from Nebius afterwards.",
+    "lines": [
+      "from Nebius afterwards."
+    ],
+    "startMs": 26820,
+    "endMs": 27950,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Clicking Analyze code reveals three findings:",
+    "lines": [
+      "Clicking Analyze code reveals three findings:"
+    ],
+    "startMs": 28520,
+    "endMs": 30580,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "a hardcoded credential, a missing human approval gate,",
+    "lines": [
+      "a hardcoded credential, a missing human approval gate,"
+    ],
+    "startMs": 30580,
+    "endMs": 33810,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "and an incorrect expression.",
+    "lines": [
+      "and an incorrect expression."
+    ],
+    "startMs": 33900,
+    "endMs": 35310,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The initial rule score is 45 out of 100.",
+    "lines": [
+      "The initial rule score is 45 out of 100."
+    ],
+    "startMs": 35960,
+    "endMs": 38450,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Repair source proposes changes",
+    "lines": [
+      "Repair source proposes changes"
+    ],
+    "startMs": 38780,
+    "endMs": 40180,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "and rechecks the configured rules.",
+    "lines": [
+      "and rechecks the configured rules."
+    ],
+    "startMs": 40180,
+    "endMs": 41810,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "In this simulated example, the score reaches 100.",
+    "lines": [
+      "In this simulated example, the score reaches 100."
+    ],
+    "startMs": 42080,
+    "endMs": 44670,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The comparison shows exactly what changed:",
+    "lines": [
+      "The comparison shows exactly what changed:"
+    ],
+    "startMs": 45100,
+    "endMs": 47110,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "the credential moves to an environment variable,",
+    "lines": [
+      "the credential moves to an environment variable,"
+    ],
+    "startMs": 47480,
+    "endMs": 49530,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "the expression is corrected,",
+    "lines": [
+      "the expression is corrected,"
+    ],
+    "startMs": 49920,
+    "endMs": 51070,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "and an approval check is added before sending the notification.",
+    "lines": [
+      "and an approval check is added before sending the notification."
+    ],
+    "startMs": 51220,
+    "endMs": 54050,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "That score reflects the configured checks.",
+    "lines": [
+      "That score reflects the configured checks."
+    ],
+    "startMs": 54720,
+    "endMs": 56730,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "It does not prove that the application",
+    "lines": [
+      "It does not prove that the application"
+    ],
+    "startMs": 57180,
+    "endMs": 58640,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "behaves correctly at runtime.",
+    "lines": [
+      "behaves correctly at runtime."
+    ],
+    "startMs": 58640,
+    "endMs": 60200,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "CodeSentinel does not execute the proposed code.",
+    "lines": [
+      "CodeSentinel does not execute the proposed code."
+    ],
+    "startMs": 60200,
+    "endMs": 63410,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Repair proposals also face structural safeguards.",
+    "lines": [
+      "Repair proposals also face structural safeguards."
+    ],
+    "startMs": 63780,
+    "endMs": 66190,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "These 14 targeted tests cover cases",
+    "lines": [
+      "These 14 targeted tests cover cases"
+    ],
+    "startMs": 66520,
+    "endMs": 68480,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "including blank proposals, deleted exported functions,",
+    "lines": [
+      "including blank proposals, deleted exported functions,"
+    ],
+    "startMs": 68480,
+    "endMs": 71270,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "and changes to supported function signatures.",
+    "lines": [
+      "and changes to supported function signatures."
+    ],
+    "startMs": 71440,
+    "endMs": 73590,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Incomplete repairs must remain marked as partial.",
+    "lines": [
+      "Incomplete repairs must remain marked as partial."
+    ],
+    "startMs": 74160,
+    "endMs": 76530,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "Now, here is our saved real response",
+    "lines": [
+      "Now, here is our saved real response"
+    ],
+    "startMs": 77080,
+    "endMs": 78920,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "from NVIDIA Nemotron Super on Nebius Token Factory.",
+    "lines": [
+      "from NVIDIA Nemotron Super on Nebius Token Factory."
+    ],
+    "startMs": 78920,
+    "endMs": 81750,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The model replaced a fictitious demonstration credential",
+    "lines": [
+      "The model replaced a fictitious demonstration credential"
+    ],
+    "startMs": 82180,
+    "endMs": 84560,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "with an environment variable.",
+    "lines": [
+      "with an environment variable."
+    ],
+    "startMs": 84560,
+    "endMs": 85970,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The returned repair passed static rules,",
+    "lines": [
+      "The returned repair passed static rules,"
+    ],
+    "startMs": 86520,
+    "endMs": 88450,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "TypeScript checks, and controlled fixture checks.",
+    "lines": [
+      "TypeScript checks, and controlled fixture checks."
+    ],
+    "startMs": 88660,
+    "endMs": 90610,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "The provider response identifier and token usage",
+    "lines": [
+      "The provider response identifier and token usage"
+    ],
+    "startMs": 91100,
+    "endMs": 93380,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "are recorded alongside the result.",
+    "lines": [
+      "are recorded alongside the result."
+    ],
+    "startMs": 93380,
+    "endMs": 95130,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "This is previously recorded evidence,",
+    "lines": [
+      "This is previously recorded evidence,"
+    ],
+    "startMs": 95600,
+    "endMs": 97180,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "separate from the simulated interface demonstration.",
+    "lines": [
+      "separate from the simulated interface demonstration."
+    ],
+    "startMs": 97180,
+    "endMs": 99670,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "CodeSentinel brings repair proposals,",
+    "lines": [
+      "CodeSentinel brings repair proposals,"
+    ],
+    "startMs": 100260,
+    "endMs": 101830,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "deterministic checks, and reviewable evidence",
+    "lines": [
+      "deterministic checks, and reviewable evidence"
+    ],
+    "startMs": 102180,
+    "endMs": 103980,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "into one workspace,",
+    "lines": [
+      "into one workspace,"
+    ],
+    "startMs": 103980,
+    "endMs": 104860,
+    "timestampMs": null,
+    "confidence": null
+  },
+  {
+    "text": "while keeping the developer in control.",
+    "lines": [
+      "while keeping the developer in control."
+    ],
+    "startMs": 104860,
+    "endMs": 106710,
+    "timestampMs": null,
+    "confidence": null
+  }
+]

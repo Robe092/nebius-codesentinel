@@ -8,6 +8,7 @@ node_modules
 
 # Next.js
 /.next/
+/.next-*/
 /out/
 
 # Production
@@ -28,3 +29,17 @@ node_modules
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local execution scratch
+/.superpowers/
+
+# Local review packets and video production files
+/deliverables/relecture-astra-*/
+/deliverables/video-*/work/
+/deliverables/video-*/assets/
+/deliverables/video-*/source/
+/deliverables/video-*/publication/
+
+# Historical internal review helpers (kept locally)
+/scripts/bundle-gemini.py
+/docs/GEMINI_ARGON_AUDIT_REPORT.md

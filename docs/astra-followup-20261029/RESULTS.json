@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-29",
+  "verdict": "SCOPED_FOLLOWUP_VERIFIED_OFFLINE",
+  "tests": {
+    "passed": 98,
+    "failed": 0,
+    "added": 2
+  },
+  "testFirst": {
+    "red": {
+      "passed": 0,
+      "failed": 2
+    },
+    "green": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "cleanCopy": {
+    "typecheckBeforeBuildWithoutGeneratedDeclarations": "PASS",
+    "defaultProductionBuild": "PASS",
+    "typecheckAfterBuild": "PASS",
+    "reinstalledDependencies": false,
+    "dependencySource": "Existing node_modules linked into an isolated temporary source copy"
+  },
+  "missingPolishReferenceFailure": "NOT_REPRODUCED",
+  "nextEnvTrackedInGit": false,
+  "liveProofBytesUnchanged": true,
+  "videoBytesUnchanged": true,
+  "newPaidInferenceRequests": 0,
+  "browserChecks": "Previously recorded 30 unique checks; not rerun because UI code did not change",
+  "publication": "NOT_PERFORMED",
+  "scope": "Helper contract added to outgoing live prompt; clean sample uses existing approval helper; current docs refer to final video."
+}

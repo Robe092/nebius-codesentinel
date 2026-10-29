@@ -1,0 +1,203 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { spawn, type ChildProcess } from "node:child_process";
+import puppeteer from "puppeteer-core";
+
+const baseURL = process.env.TEST_BASE_URL || "http://localhost:3005";
+const output = path.resolve(process.env.TEST_OUTPUT_DIR || "docs/interface-polish-20261027");
+fs.mkdirSync(output, { recursive: true });
+
+async function serverAvailable() {
+  try { return (await fetch(baseURL, { signal: AbortSignal.timeout(2500) })).ok; }
+  catch { return false; }
+}
+
+let server: ChildProcess | undefined;
+if (!(await serverAvailable())) {
+  server = spawn(process.execPath, [path.resolve("node_modules/next/dist/bin/next"), "dev", "-p", new URL(baseURL).port || "3005"], { stdio: "ignore", env: { ...process.env, MOCK_MODE: "true" } });
+  const deadline = Date.now() + 45_000;
+  while (!(await serverAvailable())) {
+    if (Date.now() > deadline) throw new Error("Local server did not become ready");
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+}
+
+const browser = await puppeteer.launch({
+  executablePath: process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  headless: true,
+});
+const results: Array<{ name: string; passed: boolean; error?: string }> = [];
+
+async function check(name: string, run: (page: Awaited<ReturnType<typeof browser.newPage>>) => Promise<void>) {
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1440, height: 1000 });
+  try {
+    await page.goto(baseURL, { waitUntil: "networkidle0" });
+    await run(page);
+    results.push({ name, passed: true });
+    console.log(`PASS ${name}`);
+  } catch (error) {
+    results.push({ name, passed: false, error: String(error) });
+    console.error(`FAIL ${name}: ${String(error)}`);
+    await page.screenshot({ path: path.join(output, `${name.replaceAll(" ", "-")}.png`), fullPage: true });
+  } finally {
+    await page.close();
+  }
+}
+
+try {
+  await check("editing invalidates the previous audit", async (page) => {
+    await page.click("#btn-static-audit");
+    await page.waitForFunction(() => document.body.innerText.includes("SEC-001"));
+    await page.click("textarea");
+    await page.keyboard.press("End");
+    await page.keyboard.type("\n// changed source");
+    await page.waitForFunction(() => !document.body.innerText.includes("SEC-001"), { timeout: 2500 });
+  });
+
+  await check("HTTP failures offer visible recovery", async (page) => {
+    await page.setRequestInterception(true);
+    page.on("request", (request) => {
+      if (request.url().endsWith("/api/analyze")) {
+        void request.respond({ status: 503, contentType: "application/json", body: JSON.stringify({ success: false, error: "Analysis temporarily unavailable" }) });
+      } else void request.continue();
+    });
+    await page.click("#btn-static-audit");
+    await page.waitForSelector('[role="alert"]', { timeout: 2500 });
+    const alert = await page.$eval('[role="alert"]', (element) => element.textContent);
+    assert.match(alert || "", /Analysis temporarily unavailable/);
+    assert.equal(await page.$eval("#btn-static-audit", (element) => (element as HTMLButtonElement).disabled), false);
+  });
+
+  await check("failed sessions retain their actual score and provenance", async (page) => {
+    const code = 'const key = "sk-1234567890abcdef1234567890";';
+    const response = await fetch(`${baseURL}/api/analyze`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, filename: "failed.ts" }),
+    });
+    const { data: report } = await response.json();
+    const session = {
+      sessionId: "fixture-failed", fileName: "failed.ts", originalCode: code, currentCode: code,
+      status: "CIRCUIT_BREAKER_TRIGGERED", currentIteration: 3, maxIterations: 3, finalReport: report,
+      steps: [{ iteration: 3, status: "FAILED", auditReport: report, invariantPassed: false,
+        patch: { id: "fixture-patch", timestamp: new Date().toISOString(), modelUsed: "fixture-model", sourceMode: "MOCK_SIMULATED", reasoningSteps: ["Unresolved secret"], explanation: "Rejected", diff: "", repairedCode: code, fixedIssueIds: [], confidenceScore: 0.2 },
+        testResults: { passed: false, output: "Secret remains", durationMs: 2 }, feedbackNotes: "Rejected" }],
+    };
+    await page.setRequestInterception(true);
+    page.on("request", (request) => {
+      if (request.url().endsWith("/api/heal")) void request.respond({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, data: session }) });
+      else void request.continue();
+    });
+    await page.click("#btn-healing-loop");
+    await page.waitForFunction(() => document.body.innerText.includes("CIRCUIT_BREAKER_TRIGGERED"));
+    const text = await page.evaluate(() => document.body.innerText);
+    assert.ok(!text.includes("100 / 100"), "Failed session must not display a hardcoded perfect score");
+    assert.ok(text.includes("fixture-model"), "Use the patch's actual model identifier");
+  });
+
+  await check("mobile keeps source scrolling inside its pane", async (page) => {
+    await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+    await page.reload({ waitUntil: "networkidle0" });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
+    await page.click("#btn-static-audit");
+    await page.waitForFunction(() => document.body.innerText.includes("SEC-001"));
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), true);
+    await page.screenshot({ path: path.join(output, "mobile-audit.png"), fullPage: true });
+  });
+
+  await check("changing result tabs starts at the new summary", async (page) => {
+    await page.click("#btn-healing-loop");
+    await page.waitForSelector("#session-score");
+    await page.$eval('[role="tabpanel"]', (element) => { element.scrollTop = element.scrollHeight; });
+    await page.click("#tab-benchmark");
+    await page.waitForSelector(".evidence-list");
+    assert.equal(await page.$eval('[role="tabpanel"]', (element) => element.scrollTop), 0);
+  });
+
+  await check("an unavailable health check stays unknown", async (page) => {
+    await page.setRequestInterception(true);
+    page.on("request", (request) => {
+      if (request.url().endsWith("/api/nebius/health")) void request.respond({ status: 503, contentType: "application/json", body: JSON.stringify({ success: false }) });
+      else void request.continue();
+    });
+    await page.reload({ waitUntil: "networkidle0" });
+    await page.waitForFunction(() => document.body.innerText.includes("CONNECTION_NOT_VERIFIED"));
+    assert.ok(!(await page.evaluate(() => document.body.innerText)).includes("MOCK_SIMULATED"));
+  });
+
+  await check("incomplete API responses show a recoverable error", async (page) => {
+    await page.setRequestInterception(true);
+    page.on("request", (request) => {
+      if (request.url().endsWith("/api/analyze")) void request.respond({ status: 200, contentType: "application/json", body: JSON.stringify({ success: true, data: { score: 100 } }) });
+      else void request.continue();
+    });
+    await page.click("#btn-static-audit");
+    await page.waitForSelector('[role="alert"]');
+    assert.match(await page.$eval('[role="alert"]', (element) => element.textContent || ""), /incomplete audit report/);
+    assert.equal(await page.$(".audit-score"), null);
+  });
+
+  await check("stopping the demo prevents late transitions and unlocks editing", async (page) => {
+    let release: (() => void) | undefined;
+    let intercepted = false;
+    let healingRequests = 0;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    await page.setRequestInterception(true);
+    page.on("request", async (request) => {
+      if (request.url().endsWith("/api/analyze")) {
+        intercepted = true;
+        await gate;
+        await request.continue().catch(() => undefined);
+      } else {
+        if (request.url().endsWith("/api/heal")) healingRequests++;
+        await request.continue();
+      }
+    });
+    await page.click("#btn-autopilot");
+    const deadline = Date.now() + 3000;
+    while (!intercepted) {
+      if (Date.now() > deadline) throw new Error("Demo did not start its audit request");
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    assert.equal(await page.$eval("textarea", (element) => element.disabled), true);
+    assert.equal(await page.$eval(".scenario-option", (element) => (element as HTMLButtonElement).disabled), true);
+    await page.click("#btn-autopilot");
+    await page.click(".scenario-option:nth-child(3)");
+    release?.();
+    await page.waitForNetworkIdle({ idleTime: 150, timeout: 5000 });
+    assert.match(await page.$eval("textarea", (element) => element.value), /processSecureBatch/);
+    assert.equal(await page.$eval("textarea", (element) => element.disabled), false);
+    assert.equal(await page.$(".audit-score"), null);
+    assert.equal(await page.$(".patch-comparison"), null);
+    assert.equal(healingRequests, 0);
+  });
+
+  await check("partial repair findings navigate the source actually shown", async (page) => {
+    await page.click("textarea");
+    await page.$eval("textarea", (element) => element.select());
+    await page.keyboard.type('await dispatchSlackAlert({});\neval("untrusted");\n');
+    await page.click("#btn-healing-loop");
+    await page.waitForSelector("#session-score");
+    await page.click("#tab-audit");
+    await page.evaluate(() => {
+      const finding = [...document.querySelectorAll(".finding")].find((element) => element.textContent?.includes("DEP-001"));
+      (finding?.querySelector(".line-link") as HTMLButtonElement)?.click();
+    });
+    assert.equal(await page.$eval("textarea", (element) => element.value.slice(element.selectionStart, element.selectionEnd)), 'eval("untrusted");');
+  });
+
+  await check("smallest supported header keeps both controls reachable", async (page) => {
+    await page.setViewport({ width: 320, height: 740 });
+    await page.reload({ waitUntil: "networkidle0" });
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+    const button = await page.$eval("#btn-autopilot", (element) => element.getBoundingClientRect().right);
+    assert.ok(button <= 320);
+    assert.ok(await page.$$eval('[role="tab"]', (elements) => elements.every((element) => element.getBoundingClientRect().right <= element.parentElement!.getBoundingClientRect().right)), "All result tabs must fit without clipping");
+    await page.screenshot({ path: path.join(output, "mobile-320.png"), fullPage: true });
+  });
+} finally {
+  await browser.close();
+  if (server) server.kill();
+  fs.writeFileSync(path.join(output, "regressions.json"), JSON.stringify({ timestamp: new Date().toISOString(), baseURL, results }, null, 2));
+}
+if (results.some((result) => !result.passed)) process.exitCode = 1;

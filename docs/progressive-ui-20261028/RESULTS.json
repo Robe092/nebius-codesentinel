@@ -1,0 +1,26 @@
+{
+  "verdict": "SIMPLIFIED_INTERFACE_VERIFIED",
+  "unitTests": {
+    "passed": 96,
+    "failed": 0
+  },
+  "browserChecks": {
+    "journey": 16,
+    "regressions": 10,
+    "simplification": 4,
+    "uniqueTotal": 30
+  },
+  "productionSmokeRepeat": 4,
+  "productionBuild": "PASS",
+  "typecheck": "PASS",
+  "independentReview": "NO_BLOCKING_FINDINGS",
+  "coreFilesUnchanged": 26,
+  "newPaidInferenceRequests": 0,
+  "mode": "MOCK_SIMULATED",
+  "publicDeployment": false,
+  "videoRecorded": false,
+  "localPreview": "http://localhost:3005/",
+  "initialScreenshot": "production/initial-1280.png",
+  "runtimeBusinessExecution": "NOT_VERIFIED",
+  "productionStyleDiagnostic": "Initial assertion sampled a 150ms CSS color transition; waiting for active animations to settle fixed the test, without an application change."
+}

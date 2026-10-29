@@ -1,0 +1,125 @@
+npm notice run nebius-nvidia-agent@0.1.0 test
+npm notice run node --import tsx --test src/tests/**/*.test.ts
+✔ CodeAnalyzer handles empty and whitespace-only code cleanly (7.560291ms)
+✔ CodeAnalyzer flags deprecated components (eval, basicLLMChain) with HIGH severity (9.934042ms)
+✔ CodeAnalyzer flags empty expression placeholders '{{ }}' with LOW severity (0.243542ms)
+✔ CodeAnalyzer recognizes HITL guardrails in preceding lines and permits communication (25.334375ms)
+✔ SelfHealingOrchestrator exits immediately with SUCCESS when given already clean code (0.465208ms)
+✔ PatchProposalSchema strictly validates patch schema structure (1.10675ms)
+✔ API: GET /api/nebius/health returns connectivity data (2.516459ms)
+✔ API: GET /api/benchmark returns unmeasured architectural comparison without fabricated metrics (0.33225ms)
+✔ API: POST /api/analyze validates payload and returns audit report (31.543125ms)
+✔ API: POST /api/heal executes healing loop and returns session (926.589542ms)
+✔ executeBoundedInference: requests carry max_tokens: 4000 and zero SDK retries configured (0.630583ms)
+✔ executeBoundedInference: oversized payload (> 8192 bytes) is rejected before transport (0.358291ms)
+✔ executeBoundedInference: exhausted request budget is rejected before transport (0.118666ms)
+✔ executeBoundedInference: provider failure remains an explicit failure without mock fallback (0.106834ms)
+✔ NebiusClient: testConnection makes zero completion requests (0.6205ms)
+✔ R4 Acceptance: absent provider confidence stays unknown and is not fabricated (2.759833ms)
+✔ R4 Acceptance: missing provider model and ID are not fabricated (0.177792ms)
+✔ NebiusClient: replaying saved live response preserves exact model, response ID and tokens usage without inventing reasoningSteps (0.801125ms)
+✔ NebiusClient: live failure throws explicit error rather than silently returning mock patch (0.236959ms)
+✔ CLI: prints help when invoked without arguments or with help flag (2493.065625ms)
+✔ CLI: benchmark command prints architectural comparison without unsupported numbers (785.372584ms)
+✔ CLI: audit on clean workflow returns exit code 0 and 100/100 score (711.541041ms)
+✔ CLI: audit on vulnerable workflow returns exit code 1 with detailed violations (679.576333ms)
+✔ CLI: heal dry-run proposes patch and exits with code 0 without modifying file (1026.423959ms)
+✔ CLI: heal with --apply overwrites file and fixes all violations (1685.678833ms)
+✔ CLI: error handling for missing target file (1255.789541ms)
+✔ CLI: heal with --apply does NOT overwrite file when outcome is not SUCCESS (1347.820667ms)
+✔ CodeAnalyzer flags hardcoded secrets with CRITICAL severity (19.121958ms)
+✔ CodeAnalyzer flags un-guarded direct communication dispatches (3.039167ms)
+✔ CodeAnalyzer flags invalid n8n expression syntax (0.510375ms)
+✔ CodeAnalyzer reports 100% score for compliant code (1.806083ms)
+✔ CodeAnalyzer: approval-name spoofing without conditional guard is flagged with GOV-001 (0.624208ms)
+✔ CodeAnalyzer: approval result not used to gate the dispatch is flagged with GOV-001 (0.630125ms)
+✔ CodeAnalyzer: supported actual conditional approval check is accepted (1.411041ms)
+✔ R2 Acceptance: approval guard must verify positive polarity and flow-control path (2.362541ms)
+✔ Cause A Acceptance: unrecognised compound expressions must not become proof of approval (0.533958ms)
+✔ The shipped clean workflow passes the same verifier used for repair proposals (1015.456833ms)
+✔ Live repair requests describe the fixture helpers required to typecheck the complete payment example (393.018083ms)
+✔ FixtureVerifier: REJECTS patch with TypeScript semantic type error (TS2322) (883.238333ms)
+✔ R1 Regression: FixtureVerifier REJECTS same type error when caller provides .d.ts or internal names (789.867292ms)
+✔ FixtureVerifier: REJECTS patch when critical security violation persists (0.4525ms)
+✔ FixtureVerifier: REJECTS patch with syntax errors (307.184792ms)
+✔ FixtureVerifier: QUARANTINES runtime execution and does NOT execute untrusted code in host process (295.612416ms)
+✔ SelfHealingOrchestrator: REJECTS patch that degrades compliance score (90 -> 80) and preserves previous code without replacement (0.748959ms)
+✔ SelfHealingOrchestrator: Circuit breaker halts after max attempts when verifier continually rejects (0.757375ms)
+✔ FixtureVerifier & Orchestrator: PASSES when compliant patch satisfies static invariants and TypeScript semantic check (runtime NOT_VERIFIED) (239.615833ms)
+✔ NebiusClient initializes in mock simulation mode when no API key is provided (1.619166ms)
+✔ NebiusClient generates high-fidelity Nemotron patch proposal in mock mode (2.672708ms)
+✔ Cause C Acceptance: main client does not claim requested model as observed model when metadata is absent (5.240375ms)
+✔ checkPatchStructure: rejects blank or whitespace-only candidate (0.593125ms)
+✔ checkPatchStructure: rejects candidate that removes exported handlePayment function (5.647ms)
+✔ checkPatchStructure: rejects candidate that changes export signature of handlePayment (1.327125ms)
+✔ checkPatchStructure: accepts a valid compliant repair preserving exports and signatures (0.814042ms)
+✔ R3 Acceptance: checkPatchStructure rejects contract violations (default, async, returnType, optionality, alias) (5.02125ms)
+✔ Cause B Acceptance: reject numeric default parameter changed to inferred string (omitted type annotation) (0.252375ms)
+✔ SelfHealingOrchestrator repairs vulnerable code within iterations (566.533208ms)
+✔ SelfHealingOrchestrator triggers circuit breaker if verifier continuously rejects patch (0.575792ms)
+✔ SelfHealingOrchestrator rejects blank patch proposal and preserves original code (0.356875ms)
+✔ SelfHealingOrchestrator rejects patch that deletes exported handlePayment (0.377416ms)
+✔ SelfHealingOrchestrator: remaining SYN-001 cannot yield SUCCESS, yields PARTIAL (329.273375ms)
+✔ R1 Acceptance: session shares single budget of 2 requests across full healing loop (2.23925ms)
+✔ Cause A Acceptance: orchestrator healing loop rejects always-true approval guard (288.121625ms)
+✔ Cause B Acceptance: orchestrator healing loop preserves public parameter contract when candidate drops type annotation (0.455166ms)
+📡 [Nebius Live Probe] Initiating bounded live repair probe against https://api.tokenfactory.nebius.com/v1/...
+⚠️ [Nebius Live Probe] Primary model failed: Offline failure. Attempting bounded fallback...
+📡 [Nebius Live Probe] Initiating bounded live repair probe against https://api.tokenfactory.nebius.com/v1/...
+⚠️ [Nebius Live Probe] Primary model failed: Simulated primary model timeout. Attempting bounded fallback...
+📡 [Nebius Live Probe] Initiating bounded live repair probe against https://api.tokenfactory.nebius.com/v1/...
+⚠️ [Nebius Live Probe] Primary model failed: Controlled repair must initialize STRIPE_SECRET from process.env.API_CREDENTIAL. Attempting bounded fallback...
+📡 [Nebius Live Probe] Initiating bounded live repair probe against https://api.tokenfactory.nebius.com/v1/...
+⚠️ [Nebius Live Probe] Primary model failed: Offline primary unavailable. Attempting bounded fallback...
+📡 [Nebius Live Probe] Initiating bounded live repair probe against https://api.tokenfactory.nebius.com/v1/...
+⚠️ [Nebius Live Probe] Primary model failed: Static audit rejected repaired code: Plaintext credential detected: Hardcoded Secret. Violates security invariant.. Attempting bounded fallback...
+📡 [Nebius Live Probe] Initiating bounded live repair probe against https://api.tokenfactory.nebius.com/v1/...
+⚠️ [Nebius Live Probe] Primary model failed: Offline primary unavailable. Attempting bounded fallback...
+📡 [Nebius Live Probe] Initiating bounded live repair probe against https://api.tokenfactory.nebius.com/v1/...
+✅ [Nebius Live Probe] PASS: Connected in 0ms. Model: nvidia/test-primary-nemotron
+ℹ️ [Nebius Live Probe] BLOCKED: ENABLE_LIVE_REPAIR gate active. Report saved to /var/folders/yd/jnmkl3hx76g7c8lc1_jc8bbw0000gn/T/sentinel-r5-gate-yfpOjN/LIVE_NEBIUS_PROBE.json
+📡 [Nebius Live Probe] Initiating bounded live repair probe against https://api.tokenfactory.nebius.com/v1/...
+⚠️ [Nebius Live Probe] Primary model failed: Missing or invalid model provenance in response: 'model' property is absent or empty. Attempting bounded fallback...
+✔ Probe import from a test filename never starts CLI requests or writes a report (791.595042ms)
+✔ Explicit probe CLI without a key writes BLOCKED with zero attempts (693.435125ms)
+✔ A failed library probe returns FAIL without changing the caller exit status (2.266667ms)
+✔ R2 Offline: validateModelResponse REJECTS non-JSON model response (0.3325ms)
+✔ R2 Offline: validateModelResponse REJECTS unchanged plaintext secret (0.097ms)
+✔ R2 Offline: validateModelResponse REJECTS empty or missing repairedCode (0.087625ms)
+✔ R2 Offline: validateModelResponse REJECTS unexpected model family (0.107791ms)
+✔ R2 Offline: validateModelResponse REJECTS missing model property (0.257292ms)
+✔ R2 Offline: validateModelResponse REJECTS repaired code with TypeScript semantic error (377.243917ms)
+✔ R2 Offline: validateModelResponse ACCEPTS compliant repair with verified model and typescript diagnostics (245.757791ms)
+✔ R2 Offline: runLiveVerification counts primary & fallback attempts accurately on offline stub (211.540959ms)
+✔ Controlled repair rejects deleted program with an environment comment (210.399625ms)
+✔ Controlled repair rejects environment reference only inside a string (210.592625ms)
+✔ Controlled repair rejects replacement hardcoded credential (0.144208ms)
+✔ Controlled repair rejects credential read from the wrong environment variable (223.097458ms)
+✔ Controlled repair rejects missing payment export (217.680208ms)
+✔ Controlled repair rejects non-function payment export (217.703333ms)
+✔ Controlled repair rejects shadowed process object (203.299417ms)
+✔ Controlled repair rejects default-only payment export (215.365375ms)
+✔ Controlled repair rejects process namespace shadowing (200.729167ms)
+✔ Controlled repair rejects process enum shadowing through a type assertion (233.602958ms)
+✔ Controlled repair accepts a real credential access: process.env.API_CREDENTIAL (209.626667ms)
+✔ Controlled repair accepts a real credential access: process.env["API_CREDENTIAL"] ?? "" (207.435458ms)
+✔ Invalid primary deleted program with an environment comment is rejected before a valid fallback (422.392625ms)
+✔ Invalid fallback deleted program with an environment comment never becomes a verified repair (203.801625ms)
+✔ Invalid primary replacement hardcoded credential is rejected before a valid fallback (209.808458ms)
+✔ Invalid fallback replacement hardcoded credential never becomes a verified repair (0.9785ms)
+✔ Valid controlled primary repair succeeds without an unnecessary fallback (205.321041ms)
+✔ R5 Acceptance: ENABLE_LIVE_REPAIR='false' gates live probe and makes zero transport calls (0.638958ms)
+✔ R5 Acceptance: live probe source code actually imports and uses shared executeBoundedInference (0.205791ms)
+✔ Cause C Acceptance: live probe rejects absent provider ID and model on offline stub (1.191083ms)
+✔ line comparison preserves context and identifies actual additions and removals (0.809292ms)
+✔ line comparison handles empty sources and unchanged trailing newlines (0.101208ms)
+✔ line comparison bounds work on large sources while retaining all lines (5.652666ms)
+✔ session evidence uses actual score and all patch provenance, including fallback (0.207167ms)
+ℹ tests 98
+ℹ suites 0
+ℹ pass 98
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10140.235417

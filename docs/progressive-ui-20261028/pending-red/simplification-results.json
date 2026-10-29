@@ -1,0 +1,22 @@
+{
+  "baseURL": "http://127.0.0.1:3013",
+  "results": [
+    {
+      "name": "one clear action above the fold at 1280x720",
+      "passed": true
+    },
+    {
+      "name": "one clear action above the fold at 390x844",
+      "passed": true
+    },
+    {
+      "name": "one clear action above the fold at 320x568",
+      "passed": true
+    },
+    {
+      "name": "findings, repair and evidence appear progressively and reset with source edits",
+      "passed": false,
+      "error": "TimeoutError: Waiting for selector `#tab-healing` failed"
+    }
+  ]
+}

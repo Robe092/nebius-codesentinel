@@ -1,3 +1,4 @@
+import ts from "typescript";
 import { CodeIssue, AuditReport } from "@/types";
 
 const SECRET_REGEXES = [
@@ -18,6 +19,193 @@ const FORBIDDEN_COMMS = [
   "emailSend",
   "gmail",
 ];
+
+function unwrapParens(expr: ts.Expression): ts.Expression {
+  let curr = expr;
+  while (ts.isParenthesizedExpression(curr)) {
+    curr = curr.expression;
+  }
+  return curr;
+}
+
+function evaluateApprovalCondition(
+  rawExpr: ts.Expression,
+  sourceFile: ts.SourceFile
+): "POSITIVE" | "NEGATIVE" | "NONE" {
+  const expr = unwrapParens(rawExpr);
+
+  // String literals or template strings are constants, not approval checks
+  if (
+    ts.isStringLiteral(expr) ||
+    ts.isNoSubstitutionTemplateLiteral(expr) ||
+    ts.isTemplateExpression(expr)
+  ) {
+    return "NONE";
+  }
+
+  // Negation: !(cond)
+  if (
+    ts.isPrefixUnaryExpression(expr) &&
+    expr.operator === ts.SyntaxKind.ExclamationToken
+  ) {
+    const inner = evaluateApprovalCondition(expr.operand, sourceFile);
+    if (inner === "POSITIVE") return "NEGATIVE";
+    if (inner === "NEGATIVE") return "POSITIVE";
+    return "NONE";
+  }
+
+  // Binary expressions: checking against boolean literals
+  if (ts.isBinaryExpression(expr)) {
+    const op = expr.operatorToken.kind;
+    const leftText = expr.left.getText(sourceFile);
+    const rightText = expr.right.getText(sourceFile);
+
+    const isRightFalse = rightText === "false" || expr.right.kind === ts.SyntaxKind.FalseKeyword;
+    const isLeftFalse = leftText === "false" || expr.left.kind === ts.SyntaxKind.FalseKeyword;
+    const isRightTrue = rightText === "true" || expr.right.kind === ts.SyntaxKind.TrueKeyword;
+    const isLeftTrue = leftText === "true" || expr.left.kind === ts.SyntaxKind.TrueKeyword;
+
+    if (op === ts.SyntaxKind.EqualsEqualsEqualsToken || op === ts.SyntaxKind.EqualsEqualsToken) {
+      if (isRightFalse) {
+        const inner = evaluateApprovalCondition(expr.left, sourceFile);
+        return inner === "POSITIVE" ? "NEGATIVE" : "NONE";
+      }
+      if (isLeftFalse) {
+        const inner = evaluateApprovalCondition(expr.right, sourceFile);
+        return inner === "POSITIVE" ? "NEGATIVE" : "NONE";
+      }
+      if (isRightTrue) return evaluateApprovalCondition(expr.left, sourceFile);
+      if (isLeftTrue) return evaluateApprovalCondition(expr.right, sourceFile);
+    }
+
+    if (op === ts.SyntaxKind.ExclamationEqualsEqualsToken || op === ts.SyntaxKind.ExclamationEqualsToken) {
+      if (isRightFalse) return evaluateApprovalCondition(expr.left, sourceFile);
+      if (isLeftFalse) return evaluateApprovalCondition(expr.right, sourceFile);
+      if (isRightTrue) {
+        const inner = evaluateApprovalCondition(expr.left, sourceFile);
+        return inner === "POSITIVE" ? "NEGATIVE" : "NONE";
+      }
+      if (isLeftTrue) {
+        const inner = evaluateApprovalCondition(expr.right, sourceFile);
+        return inner === "POSITIVE" ? "NEGATIVE" : "NONE";
+      }
+    }
+
+    // Any other binary operator (e.g. ||, &&) is an unsupported compound condition
+    return "NONE";
+  }
+
+  // Await expression: await verifyHumanApproval(...)
+  if (ts.isAwaitExpression(expr)) {
+    return evaluateApprovalCondition(expr.expression, sourceFile);
+  }
+
+  // Identifiers with approval-related names
+  if (ts.isIdentifier(expr)) {
+    if (/^(isapproved|hasapproval|approved|approval|is_approved|has_approval)$/i.test(expr.text)) {
+      return "POSITIVE";
+    }
+    return "NONE";
+  }
+
+  // Property access expression: e.g. event.isApproved, gatekeeper.approval
+  if (ts.isPropertyAccessExpression(expr)) {
+    if (/^(isapproved|hasapproval|approved|approval|is_approved|has_approval)$/i.test(expr.name.text)) {
+      return "POSITIVE";
+    }
+    return "NONE";
+  }
+
+  // Call expressions: only recognize supported approval functions/methods
+  if (ts.isCallExpression(expr)) {
+    if (ts.isIdentifier(expr.expression)) {
+      if (/^(verifyhuman(approval)?|gatekeeper(approval)?|hitl(approval)?|checkapproval|verifyapproval|isapproved|hasapproval)$/i.test(expr.expression.text)) {
+        return "POSITIVE";
+      }
+    } else if (ts.isPropertyAccessExpression(expr.expression)) {
+      const methodName = expr.expression.name.text;
+      const receiverText = expr.expression.expression.getText(sourceFile);
+      if (
+        /^(verifyhuman(approval)?|gatekeeper(approval)?|hitl(approval)?|checkapproval|verifyapproval)$/i.test(methodName) ||
+        (/^(approve|approval|isapproved|hasapproval|verify|check)$/i.test(methodName) &&
+          /(gatekeeper|hitl|approval|guardrail)/i.test(receiverText))
+      ) {
+        return "POSITIVE";
+      }
+    }
+    return "NONE";
+  }
+
+  return "NONE";
+}
+
+function isNodeDescendantOf(node: ts.Node, parent: ts.Node): boolean {
+  if (node === parent) return true;
+  let curr: ts.Node | undefined = node.parent;
+  while (curr) {
+    if (curr === parent) return true;
+    curr = curr.parent;
+  }
+  return false;
+}
+
+function statementExits(stmt: ts.Statement): boolean {
+  if (ts.isReturnStatement(stmt) || ts.isThrowStatement(stmt)) {
+    return true;
+  }
+  if (ts.isBlock(stmt)) {
+    for (const s of stmt.statements) {
+      if (statementExits(s)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function isGuardedByConditionalApproval(node: ts.Node, sourceFile: ts.SourceFile): boolean {
+  let child = node;
+  let current: ts.Node | undefined = node.parent;
+  while (current) {
+    if (ts.isIfStatement(current)) {
+      const cond = evaluateApprovalCondition(current.expression, sourceFile);
+      if (cond === "POSITIVE" && isNodeDescendantOf(child, current.thenStatement)) {
+        return true;
+      }
+      if (cond === "NEGATIVE" && current.elseStatement && isNodeDescendantOf(child, current.elseStatement)) {
+        return true;
+      }
+    }
+    child = current;
+    current = current.parent;
+  }
+  return false;
+}
+
+function hasPrecedingApprovalGuard(node: ts.Node, sourceFile: ts.SourceFile): boolean {
+  let block: ts.Node | undefined = node.parent;
+  while (block && !ts.isBlock(block) && !ts.isSourceFile(block)) {
+    block = block.parent;
+  }
+  if (!block) return false;
+
+  const statements = ts.isBlock(block) ? block.statements : (block as ts.SourceFile).statements;
+  const nodePos = node.getStart(sourceFile);
+
+  for (const stmt of statements) {
+    if (stmt.getStart(sourceFile) >= nodePos) break;
+    if (ts.isIfStatement(stmt)) {
+      const cond = evaluateApprovalCondition(stmt.expression, sourceFile);
+      if (cond === "NEGATIVE" && statementExits(stmt.thenStatement)) {
+        return true;
+      }
+      if (cond === "POSITIVE" && stmt.elseStatement && statementExits(stmt.elseStatement)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 export class CodeAnalyzer {
   /**
@@ -48,47 +236,63 @@ export class CodeAnalyzer {
       }
     }
 
-    // 2. Scan for un-guarded direct communication dispatches
-    for (let idx = 0; idx < lines.length; idx++) {
-      const line = lines[idx].toLowerCase();
-      if (line.trim().startsWith("import ") || line.trim().startsWith("//") || line.trim().startsWith("/*")) {
-        continue;
-      }
+    // 2. Scan for un-guarded direct communication dispatches using AST conditional check
+    const sourceFile = ts.createSourceFile(
+      targetName,
+      code,
+      ts.ScriptTarget.ES2022,
+      true,
+      ts.ScriptKind.TS
+    );
+
+    const isCommCall = (text: string): { isComm: boolean; comm: string } => {
+      const lower = text.toLowerCase();
       for (const comm of FORBIDDEN_COMMS) {
         if (
-          line.includes(comm) &&
-          (line.includes("post") || line.includes("send") || line.includes("dispatch") || line.includes("api."))
+          lower.includes(comm.toLowerCase()) &&
+          (lower.includes("post") || lower.includes("send") || lower.includes("dispatch") || lower.includes("api."))
         ) {
-          // Check if there is an approval or guardrail in the preceding lines (excluding comment lines)
-          const windowStart = Math.max(0, idx - 5);
-          const precedingContext = lines
-            .slice(windowStart, idx)
-            .filter((l) => !l.trim().startsWith("//") && !l.trim().startsWith("/*") && !l.trim().startsWith("*"))
-            .join(" ")
-            .toLowerCase();
-          const hasGuardrail =
-            precedingContext.includes("approv") ||
-            precedingContext.includes("guardrail") ||
-            precedingContext.includes("gatekeeper") ||
-            precedingContext.includes("hitl") ||
-            precedingContext.includes("verifyhuman");
+          return { isComm: true, comm };
+        }
+      }
+      return { isComm: false, comm: "" };
+    };
 
-          if (!hasGuardrail) {
-            issues.push({
-              id: `issue-${issueCounter++}`,
-              ruleId: "GOV-001",
-              category: "FORBIDDEN_DIRECT_COMMUNICATION",
-              severity: "HIGH",
-              message: `Unguarded direct dispatch to external channel (${comm}) without HITL approval or circuit breaker.`,
-              line: idx + 1,
-              snippet: lines[idx].trim(),
-              autoFixable: true,
-              remediationHint: "Enforce Human-in-the-Loop approval gate before dispatch.",
-            });
+    const flaggedLines = new Set<number>();
+
+    const checkNode = (node: ts.Node) => {
+      if (ts.isCallExpression(node)) {
+        const exprText = node.expression.getText(sourceFile);
+        const { isComm, comm } = isCommCall(exprText);
+        if (isComm) {
+          const guarded =
+            isGuardedByConditionalApproval(node, sourceFile) ||
+            hasPrecedingApprovalGuard(node, sourceFile);
+
+          if (!guarded) {
+            const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+            const lineNum = line + 1;
+            if (!flaggedLines.has(lineNum)) {
+              flaggedLines.add(lineNum);
+              issues.push({
+                id: `issue-${issueCounter++}`,
+                ruleId: "GOV-001",
+                category: "FORBIDDEN_DIRECT_COMMUNICATION",
+                severity: "HIGH",
+                message: `Unguarded direct dispatch to external channel (${comm}) without HITL approval or circuit breaker.`,
+                line: lineNum,
+                snippet: lines[line]?.trim() || exprText,
+                autoFixable: true,
+                remediationHint: "Enforce Human-in-the-Loop approval gate before dispatch.",
+              });
+            }
           }
         }
       }
-    }
+      ts.forEachChild(node, checkNode);
+    };
+
+    checkNode(sourceFile);
 
     // 3. Scan for n8n expression anomalies
     for (let idx = 0; idx < lines.length; idx++) {

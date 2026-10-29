@@ -1,0 +1,163 @@
+{
+  "exportedAt": "2026-10-28T15:53:49.599Z",
+  "filename": "payment_webhook.ts",
+  "source": "// Payment webhook · automation workspace\nimport { dispatchSlackAlert } from \"./notifier\";\n\nconst STRIPE_SECRET = \"sk-live_98372498237498237498234\";\n\nexport async function handlePayment(event: any) {\n  const amount = event.data.amount;\n  const customerEmail = json.customer.email;\n\n  if (amount > 10000) {\n    await dispatchSlackAlert({\n      channel: \"#high-value-transactions\",\n      text: \"High payment processed: \" + amount,\n    });\n  }\n\n  return {\n    status: \"processed\",\n    email: customerEmail,\n  };\n}\n",
+  "audit": {
+    "targetName": "payment_webhook.ts",
+    "timestamp": "2026-10-28T15:53:48.433Z",
+    "score": 45,
+    "passed": false,
+    "issues": [
+      {
+        "id": "issue-1",
+        "ruleId": "SEC-001",
+        "category": "HARDCODED_SECRET",
+        "severity": "CRITICAL",
+        "message": "Plaintext credential detected: Hardcoded Secret. Violates security invariant.",
+        "line": 4,
+        "snippet": "const STRIPE_SECRET = \"sk-live_98372498237498237498234\";",
+        "autoFixable": true,
+        "remediationHint": "Replace with environment variable (e.g. process.env.API_KEY)."
+      },
+      {
+        "id": "issue-2",
+        "ruleId": "GOV-001",
+        "category": "FORBIDDEN_DIRECT_COMMUNICATION",
+        "severity": "HIGH",
+        "message": "Unguarded direct dispatch to external channel (slack) without HITL approval or circuit breaker.",
+        "line": 11,
+        "snippet": "await dispatchSlackAlert({",
+        "autoFixable": true,
+        "remediationHint": "Enforce Human-in-the-Loop approval gate before dispatch."
+      },
+      {
+        "id": "issue-3",
+        "ruleId": "SYN-001",
+        "category": "EXPRESSION_SYNTAX",
+        "severity": "MEDIUM",
+        "message": "n8n expression syntax error: missing leading '$' in json reference. Must be $json.",
+        "line": 8,
+        "snippet": "const customerEmail = json.customer.email;",
+        "autoFixable": true,
+        "remediationHint": "Prepend '$' to make it $json.prop."
+      }
+    ],
+    "metrics": {
+      "totalLines": 22,
+      "criticalCount": 1,
+      "highCount": 1,
+      "mediumCount": 1,
+      "lowCount": 0
+    }
+  },
+  "repair": {
+    "sessionId": "session-1793202828640-25hx",
+    "fileName": "payment_webhook.ts",
+    "originalCode": "// Payment webhook · automation workspace\nimport { dispatchSlackAlert } from \"./notifier\";\n\nconst STRIPE_SECRET = \"sk-live_98372498237498237498234\";\n\nexport async function handlePayment(event: any) {\n  const amount = event.data.amount;\n  const customerEmail = json.customer.email;\n\n  if (amount > 10000) {\n    await dispatchSlackAlert({\n      channel: \"#high-value-transactions\",\n      text: \"High payment processed: \" + amount,\n    });\n  }\n\n  return {\n    status: \"processed\",\n    email: customerEmail,\n  };\n}\n",
+    "currentCode": "// Payment webhook · automation workspace\nimport { dispatchSlackAlert } from \"./notifier\";\n\nconst STRIPE_SECRET = process.env.API_CREDENTIAL || \"\";\n\nexport async function handlePayment(event: any) {\n  const amount = event.data.amount;\n  const customerEmail = $json.customer.email;\n\n  if (amount > 10000) {\n    // HITL Gatekeeper guardrail check\n    if (await verifyHumanApproval(event)) {\n      await dispatchSlackAlert({\n      channel: \"#high-value-transactions\",\n      text: \"High payment processed: \" + amount,\n    });\n    }\n  }\n\n  return {\n    status: \"processed\",\n    email: customerEmail,\n  };\n}\n",
+    "status": "SUCCESS",
+    "currentIteration": 1,
+    "maxIterations": 3,
+    "steps": [
+      {
+        "iteration": 1,
+        "status": "COMPLETED",
+        "auditReport": {
+          "targetName": "payment_webhook.ts",
+          "timestamp": "2026-10-28T15:53:48.640Z",
+          "score": 45,
+          "passed": false,
+          "issues": [
+            {
+              "id": "issue-1",
+              "ruleId": "SEC-001",
+              "category": "HARDCODED_SECRET",
+              "severity": "CRITICAL",
+              "message": "Plaintext credential detected: Hardcoded Secret. Violates security invariant.",
+              "line": 4,
+              "snippet": "const STRIPE_SECRET = \"sk-live_98372498237498237498234\";",
+              "autoFixable": true,
+              "remediationHint": "Replace with environment variable (e.g. process.env.API_KEY)."
+            },
+            {
+              "id": "issue-2",
+              "ruleId": "GOV-001",
+              "category": "FORBIDDEN_DIRECT_COMMUNICATION",
+              "severity": "HIGH",
+              "message": "Unguarded direct dispatch to external channel (slack) without HITL approval or circuit breaker.",
+              "line": 11,
+              "snippet": "await dispatchSlackAlert({",
+              "autoFixable": true,
+              "remediationHint": "Enforce Human-in-the-Loop approval gate before dispatch."
+            },
+            {
+              "id": "issue-3",
+              "ruleId": "SYN-001",
+              "category": "EXPRESSION_SYNTAX",
+              "severity": "MEDIUM",
+              "message": "n8n expression syntax error: missing leading '$' in json reference. Must be $json.",
+              "line": 8,
+              "snippet": "const customerEmail = json.customer.email;",
+              "autoFixable": true,
+              "remediationHint": "Prepend '$' to make it $json.prop."
+            }
+          ],
+          "metrics": {
+            "totalLines": 22,
+            "criticalCount": 1,
+            "highCount": 1,
+            "mediumCount": 1,
+            "lowCount": 0
+          }
+        },
+        "patch": {
+          "id": "patch-mock-1793202828641",
+          "timestamp": "2026-10-28T15:53:48.641Z",
+          "modelUsed": "nvidia/nemotron-3-super-120b-a12b [Nebius Token Factory]",
+          "reasoningSteps": [
+            "Detected plain-text credentials violating security invariant. Extracted credential into process.env pattern.",
+            "Detected unvetted direct communication dispatch without HITL gatekeeper. Inserted verification checkpoint and circuit breaker.",
+            "Detected malformed expression (missing leading $ in json/node reference). Normalized expression to $json / $('NodeName')."
+          ],
+          "explanation": "Nemotron self-healing loop repaired all identified security and syntax violations while maintaining existing runtime contracts.",
+          "diff": "--- a/target.js\n+++ b/target.js\n@@ -1,5 +1,9 @@\n- // Vulnerable code\n+ // Fixed by NVIDIA Nemotron (Nebius Token Factory)\n+ Detected plain-text credentials violating security invariant. Extracted credential into process.env pattern.\n+ Detected unvetted direct communication dispatch without HITL gatekeeper. Inserted verification checkpoint and circuit breaker.\n+ Detected malformed expression (missing leading $ in json/node reference). Normalized expression to $json / $('NodeName').",
+          "repairedCode": "// Payment webhook · automation workspace\nimport { dispatchSlackAlert } from \"./notifier\";\n\nconst STRIPE_SECRET = process.env.API_CREDENTIAL || \"\";\n\nexport async function handlePayment(event: any) {\n  const amount = event.data.amount;\n  const customerEmail = $json.customer.email;\n\n  if (amount > 10000) {\n    // HITL Gatekeeper guardrail check\n    if (await verifyHumanApproval(event)) {\n      await dispatchSlackAlert({\n      channel: \"#high-value-transactions\",\n      text: \"High payment processed: \" + amount,\n    });\n    }\n  }\n\n  return {\n    status: \"processed\",\n    email: customerEmail,\n  };\n}\n",
+          "fixedIssueIds": [
+            "issue-1",
+            "issue-2",
+            "issue-3"
+          ],
+          "confidenceScore": 0.96,
+          "sourceMode": "MOCK_SIMULATED"
+        },
+        "testResults": {
+          "passed": true,
+          "output": "Static rules passed (100/100) + TypeScript semantic check passed. Runtime business execution NOT_VERIFIED (host process execution disabled for security isolation).",
+          "durationMs": 532
+        },
+        "invariantPassed": true,
+        "feedbackNotes": "Patch improved score from 45 to 100."
+      }
+    ],
+    "finalReport": {
+      "targetName": "payment_webhook.ts",
+      "timestamp": "2026-10-28T15:53:48.643Z",
+      "score": 100,
+      "passed": true,
+      "issues": [],
+      "metrics": {
+        "totalLines": 25,
+        "criticalCount": 0,
+        "highCount": 0,
+        "mediumCount": 0,
+        "lowCount": 0
+      }
+    }
+  },
+  "requestTimings": {
+    "auditMs": 15,
+    "repairMs": 543
+  },
+  "measurementScope": "Browser request round trips; not model inference benchmarks.",
+  "verificationScope": "Configured static rules plus in-memory TypeScript semantic checks; host runtime execution NOT_VERIFIED."
+}

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-29",
+  "automatedTests": {
+    "passed": 98,
+    "failed": 0
+  },
+  "curatedExportTypecheckBeforeBuild": "PASS",
+  "curatedExportProductionBuild": "PASS",
+  "curatedExportTypecheckAfterBuild": "PASS",
+  "newPaidInferenceRequests": 0,
+  "privateConfigExcluded": true,
+  "reviewPacketsExcluded": true,
+  "rawVoiceAndRecordingsExcluded": true,
+  "priorBrowserChecks": {
+    "count": 30,
+    "date": "2026-10-28",
+    "rerunForPackaging": false
+  },
+  "youtubeUrl": "https://youtu.be/6gfGnUcbGi0"
+}

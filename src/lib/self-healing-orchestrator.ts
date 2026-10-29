@@ -7,6 +7,9 @@ import {
 } from "@/types";
 import { CodeAnalyzer } from "./code-analyzer";
 import { NebiusClient, nebiusClient } from "./nebius-client";
+import { createFixtureVerifier } from "./fixture-verifier";
+import { checkPatchStructure } from "./patch-structure";
+import { BoundedInferenceBudget } from "./bounded-inference";
 
 export interface SelfHealingOptions {
   client?: NebiusClient;
@@ -41,6 +44,8 @@ export class SelfHealingOrchestrator {
     let currentIteration = 1;
     let loopStatus: SelfHealingSession["status"] = "IN_PROGRESS";
     let finalAudit: AuditReport | undefined;
+    let anyPatchAccepted = false;
+    const sessionBudget: BoundedInferenceBudget = { maxRequests: 2, requestsUsed: 0 };
 
     while (currentIteration <= this.maxIterations) {
       // Step 1: Static Audit
@@ -60,43 +65,71 @@ export class SelfHealingOrchestrator {
         break;
       }
 
-      // Step 2: Propose Patch with Nebius NVIDIA Nemotron
-      const patch = await this.client.generatePatch({
-        code: currentCode,
-        issues: audit.issues,
-        context: `Iteration ${currentIteration}/${this.maxIterations} on ${fileName}`,
-        previousAttempts,
-      });
+      // Step 2: Propose Patch with Nebius NVIDIA Nemotron (bounded by session budget)
+      let patch: PatchProposal;
+      try {
+        patch = await (this.client as any).generatePatch(
+          {
+            code: currentCode,
+            issues: audit.issues,
+            context: `Iteration ${currentIteration}/${this.maxIterations} on ${fileName}`,
+            previousAttempts,
+          },
+          { budget: sessionBudget }
+        );
+      } catch (err: any) {
+        steps.push({
+          iteration: currentIteration,
+          status: "FAILED",
+          auditReport: audit,
+          invariantPassed: false,
+          feedbackNotes: `Inference halted or session budget exhausted: ${err.message}`,
+        });
+        loopStatus = anyPatchAccepted ? "PARTIAL" : "CIRCUIT_BREAKER_TRIGGERED";
+        break;
+      }
 
-      // Step 3: Run Verification on Repaired Code
+      // Step 3: Run Verification & Score Non-Regression Guard on Repaired Code
       let testPassed = true;
       let testOutput = "Automated invariant test suite passed.";
       const testStart = Date.now();
 
-      if (this.testVerifier) {
-        try {
-          const res = await this.testVerifier(patch.repairedCode);
-          testPassed = res.passed;
-          testOutput = res.output;
-        } catch (err: any) {
+      // Guard 3.1: Structural integrity (rejects empty candidate, removed exports, altered signatures)
+      const structureCheck = checkPatchStructure(currentCode, patch.repairedCode);
+      if (!structureCheck.passed) {
+        testPassed = false;
+        testOutput = `Patch structural rejection: ${structureCheck.error}`;
+      }
+
+      const candidateAudit = CodeAnalyzer.analyze(patch.repairedCode, fileName);
+
+      if (testPassed) {
+        if (candidateAudit.metrics.criticalCount > 0) {
           testPassed = false;
-          testOutput = `Test execution runtime error: ${err.message}`;
-        }
-      } else {
-        // Default deterministic invariant verification:
-        // 1. Secrets must be eradicated
-        // 2. Syntax must be valid
-        // 3. Score must improve
-        const postAudit = CodeAnalyzer.analyze(patch.repairedCode, fileName);
-        if (postAudit.metrics.criticalCount > 0) {
+          testOutput = `Critical vulnerability still present: ${candidateAudit.issues.find((i) => i.severity === "CRITICAL")?.message || "Critical security violation"}`;
+        } else if (candidateAudit.score < audit.score) {
           testPassed = false;
-          testOutput = `Critical vulnerability still present: ${postAudit.issues[0]?.message}`;
-        } else if (postAudit.score < audit.score) {
-          testPassed = false;
-          testOutput = `Regression detected: compliance score degraded from ${audit.score} to ${postAudit.score}`;
+          testOutput = `Regression detected: compliance score degraded from ${audit.score} to ${candidateAudit.score}`;
+        } else if (this.testVerifier) {
+          try {
+            const res = await this.testVerifier(patch.repairedCode);
+            testPassed = res.passed;
+            testOutput = res.output;
+          } catch (err: any) {
+            testPassed = false;
+            testOutput = `Test execution runtime error: ${err.message}`;
+          }
         } else {
-          testPassed = true;
-          testOutput = `Code passed security invariant checks. Score improved: ${audit.score} ➔ ${postAudit.score}`;
+          // Multi-layer verification: Static Invariants + TypeScript Semantic Checks (0 execution in app process)
+          const fixtureVerifier = createFixtureVerifier(fileName);
+          try {
+            const res = await fixtureVerifier(patch.repairedCode);
+            testPassed = res.passed;
+            testOutput = res.output;
+          } catch (err: any) {
+            testPassed = false;
+            testOutput = `Verification error: ${err.message}`;
+          }
         }
       }
 
@@ -114,22 +147,24 @@ export class SelfHealingOrchestrator {
         },
         invariantPassed: testPassed,
         feedbackNotes: testPassed
-          ? "Patch successfully resolved identified issues without regression."
+          ? (candidateAudit.score > audit.score
+              ? `Patch improved score from ${audit.score} to ${candidateAudit.score}.`
+              : "Patch preserved compliance score without regression.")
           : `Patch failed validation: ${testOutput}`,
       });
 
-      // Apply the repaired code if test passed
+      // Apply the repaired code ONLY if test passed and score did not regress
       if (testPassed) {
+        anyPatchAccepted = true;
         currentCode = patch.repairedCode;
-        const recheck = CodeAnalyzer.analyze(currentCode, fileName);
-        finalAudit = recheck;
+        finalAudit = candidateAudit;
 
-        if (recheck.passed) {
+        if (candidateAudit.passed && candidateAudit.issues.length === 0) {
           loopStatus = "SUCCESS";
           break;
         }
       } else {
-        // Record failure for next iteration feedback
+        // Record failure for next iteration feedback without replacing currentCode
         previousAttempts.push({
           iteration: currentIteration,
           patchDiff: patch.diff,
@@ -141,8 +176,12 @@ export class SelfHealingOrchestrator {
     }
 
     if (loopStatus === "IN_PROGRESS") {
-      // Circuit breaker triggered after max attempts
-      loopStatus = "CIRCUIT_BREAKER_TRIGGERED";
+      if (anyPatchAccepted && finalAudit && finalAudit.passed && finalAudit.issues.length > 0) {
+        loopStatus = "PARTIAL";
+      } else {
+        // Circuit breaker triggered after max attempts
+        loopStatus = "CIRCUIT_BREAKER_TRIGGERED";
+      }
     }
 
     return {

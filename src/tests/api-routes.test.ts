@@ -10,20 +10,24 @@ test("API: GET /api/nebius/health returns connectivity data", async () => {
   assert.equal(res.status, 200);
   const data = await res.json();
   assert.equal(data.success, true);
-  assert.equal(data.data.connected, true);
+  assert.equal(data.data.connected, false); // health probe does not claim verified connection without transport
+  assert.equal(data.data.configured, true);
   assert.ok(data.data.model.includes("nemotron"));
   assert.ok(["LIVE_NEBIUS", "MOCK_SIMULATED"].includes(data.data.mode));
 });
 
-test("API: GET /api/benchmark returns 5 comparative benchmarks", async () => {
+test("API: GET /api/benchmark returns unmeasured architectural comparison without fabricated metrics", async () => {
   const res = await getBenchmark();
   assert.equal(res.status, 200);
   const data = await res.json();
   assert.equal(data.success, true);
-  assert.ok(Array.isArray(data.data.metrics));
-  assert.equal(data.data.metrics.length, 5);
-  assert.ok(data.data.metrics.some((m: any) => m.delta.includes("4.1x Faster")));
-  assert.ok(data.data.metrics.some((m: any) => m.delta.includes("8.3x Cheaper")));
+  assert.equal(data.data.measured, false);
+  assert.equal(data.data.status, "UNMEASURED");
+  const serialized = JSON.stringify(data);
+  assert.equal(serialized.includes("4.1x"), false);
+  assert.equal(serialized.includes("8.3x"), false);
+  assert.equal(serialized.includes("100.0%"), false);
+  assert.ok(data.data.description.includes("unmeasured"));
 });
 
 test("API: POST /api/analyze validates payload and returns audit report", async () => {

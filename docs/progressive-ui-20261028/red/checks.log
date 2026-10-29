@@ -1,0 +1,28 @@
+FAIL one clear action above the fold at 1280x720: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'Run audit'
+- 'Analyze code'
+
+FAIL one clear action above the fold at 390x844: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'Run audit'
+- 'Analyze code'
+
+FAIL one clear action above the fold at 320x568: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ 'Run audit'
+- 'Analyze code'
+
+FAIL findings, repair and evidence appear progressively and reset with source edits: AssertionError [ERR_ASSERTION]: Comparison is available only after a proposal
++ actual - expected
+
++ CdpElementHandle {
++   Symbol(_isElementHandle): true,
++   handle: CdpJSHandle {},
++   isolatedHandle: undefined
++ }
+- null
+
